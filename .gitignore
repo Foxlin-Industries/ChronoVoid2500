@@ -1,0 +1,19 @@
+# Ignore .NET
+bin/
+obj/
+.vs/
+
+# Ignore Unity
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+Builds/
+Assets/AssetStoreTools*
+*.csproj
+*.unityproj
+*.sln
+*.userprefs
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
