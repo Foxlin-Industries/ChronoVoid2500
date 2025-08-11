@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="ChronoVoid2500.Mobile.Views.DebugPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Debug Info"
+             BackgroundColor="#0a0a0a">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            
+            <Label Text="ChronoVoid 2500 - Debug Info" 
+                   FontSize="24" 
+                   FontAttributes="Bold"
+                   TextColor="#00ff88" 
+                   HorizontalOptions="Center" />
+
+            <Frame BackgroundColor="#1a1a1a" BorderColor="#333333" Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Shell Status" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    
+                    <Label x:Name="ShellStatusLabel"
+                           Text="Checking..." 
+                           FontSize="14" 
+                           TextColor="#888888" />
+                    
+                    <Button x:Name="CheckShellButton"
+                            Text="Check Shell.Current"
+                            BackgroundColor="#00ff88"
+                            TextColor="Black"
+                            Clicked="OnCheckShellClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#1a1a1a" BorderColor="#333333" Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Navigation Test" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    
+                    <Button Text="Test Navigate to Login"
+                            BackgroundColor="#0066cc"
+                            TextColor="White"
+                            Clicked="OnNavigateToLoginClicked" />
+                    
+                    <Button Text="Test Alert Dialog"
+                            BackgroundColor="#cc6600"
+                            TextColor="White"
+                            Clicked="OnTestAlertClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#1a1a1a" BorderColor="#333333" Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Debug Log" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    
+                    <Label x:Name="DebugLogLabel"
+                           Text="Debug messages will appear here..." 
+                           FontSize="12" 
+                           TextColor="#888888" />
+                    
+                    <Button Text="Clear Log"
+                            BackgroundColor="#666666"
+                            TextColor="White"
+                            Clicked="OnClearLogClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

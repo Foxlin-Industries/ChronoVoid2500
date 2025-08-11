@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="ChronoVoid2500.Mobile.Views.RealmsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ChronoVoid2500.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ChronoVoid2500.Mobile.Models"
+             x:DataType="vm:RealmsViewModel"
+             Title="{Binding Title}"
+             BackgroundColor="#0a0a0a">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Frame Grid.Row="0" BackgroundColor="#1a1a1a" BorderColor="#333333" Margin="10">
+            <VerticalStackLayout>
+                <Label Text="{Binding UserData.Username, StringFormat='Welcome, Captain {0}'}" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="#00ff88" 
+                       HorizontalOptions="Center" />
+                <Label Text="Select a Realm to explore" 
+                       FontSize="14" 
+                       TextColor="#888888" 
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Realms List -->
+        <RefreshView Grid.Row="1" 
+                     Command="{Binding LoadRealmsCommand}" 
+                     IsRefreshing="{Binding IsBusy}"
+                     RefreshColor="#00ff88">
+            
+            <CollectionView ItemsSource="{Binding Realms}" 
+                          BackgroundColor="Transparent">
+                
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="{x:Type models:RealmDto}">
+                        <Grid Padding="10">
+                            <Frame BackgroundColor="#1a1a1a" 
+                                   BorderColor="#333333" 
+                                   Padding="15"
+                                   HasShadow="True">
+                                
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RealmsViewModel}}, Path=SelectRealmCommand}"
+                                                        CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <VerticalStackLayout Grid.Column="0" Spacing="5">
+                                        <Label Text="{Binding Name, FallbackValue='Unknown Realm'}" 
+                                               FontSize="18" 
+                                               FontAttributes="Bold"
+                                               TextColor="#00ff88" />
+                                        
+                                        <Label Text="{Binding NodeCount, StringFormat='{0} Nodes', FallbackValue='0 Nodes'}" 
+                                               FontSize="14" 
+                                               TextColor="White" />
+                                        
+                                        <Label Text="{Binding QuantumStationSeedRate, StringFormat='Quantum Stations: {0}%', FallbackValue='Quantum Stations: 0%'}" 
+                                               FontSize="12" 
+                                               TextColor="#888888" />
+                                        
+                                        <Label Text="{Binding CreatedAt, StringFormat='Created: {0:MMM dd, yyyy}', FallbackValue='Created: Unknown'}" 
+                                               FontSize="12" 
+                                               TextColor="#888888" />
+                                    </VerticalStackLayout>
+
+                                    <Label Grid.Column="1" 
+                                           Text="▶" 
+                                           FontSize="24" 
+                                           TextColor="#00ff88" 
+                                           VerticalOptions="Center" />
+                                </Grid>
+                            </Frame>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="No realms available" 
+                               FontSize="16" 
+                               TextColor="#888888" 
+                               HorizontalOptions="Center" />
+                        <Button Text="Refresh" 
+                                Command="{Binding LoadRealmsCommand}" 
+                                BackgroundColor="#00ff88" 
+                                TextColor="Black" 
+                                Margin="0,10" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Error Message -->
+        <Label Grid.Row="1" 
+               Text="{Binding ErrorMessage}"
+               TextColor="Red"
+               FontSize="16"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+        <!-- Footer -->
+        <StackLayout Grid.Row="2" Orientation="Horizontal" Padding="10">
+            <Button Text="Logout" 
+                    Command="{Binding LogoutCommand}" 
+                    BackgroundColor="Transparent" 
+                    TextColor="Red" 
+                    BorderColor="Red" 
+                    BorderWidth="1" 
+                    HorizontalOptions="Start" />
+            
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                             Color="#00ff88" 
+                             HorizontalOptions="End" 
+                             VerticalOptions="Center" />
+        </StackLayout>
+
+    </Grid>
+
+</ContentPage>

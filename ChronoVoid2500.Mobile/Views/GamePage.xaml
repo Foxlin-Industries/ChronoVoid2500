@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="ChronoVoid2500.Mobile.Views.GamePage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ChronoVoid2500.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ChronoVoid2500.Mobile.Models"
+             x:DataType="vm:GameViewModel"
+             Title="{Binding Title}">
+
+    <!-- Modern Mobile Game Interface -->
+    <Grid>
+        <!-- Background Gradient -->
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#0a0a0a" Offset="0.0" />
+                <GradientStop Color="#1a1a2e" Offset="0.5" />
+                <GradientStop Color="#16213e" Offset="1.0" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <!-- Main Interface Layout -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />  <!-- Header -->
+                <RowDefinition Height="Auto" />  <!-- System Info -->
+                <RowDefinition Height="*" />     <!-- Main Content -->
+                <RowDefinition Height="Auto" />  <!-- Action Bar -->
+            </Grid.RowDefinitions>
+
+            <!-- Header - Realm Name -->
+            <Frame Grid.Row="0" 
+                   BackgroundColor="#00ff88" 
+                   CornerRadius="0,0,15,15" 
+                   Padding="20,15"
+                   Margin="0,0,0,10">
+                <Label Text="{Binding CurrentNode.RealmName, FallbackValue='UNKNOWN REALM'}" 
+                       FontSize="18" 
+                       FontAttributes="Bold"
+                       TextColor="Black" 
+                       HorizontalOptions="Center" />
+            </Frame>
+
+            <!-- System Location Display -->
+            <Frame Grid.Row="1" 
+                   BackgroundColor="#1a1a2e" 
+                   BorderColor="#00ff88" 
+                   CornerRadius="15" 
+                   Padding="15,10"
+                   Margin="20,0,20,15">
+                <Label Text="{Binding LocationDisplay, FallbackValue='SYSTEM UNKNOWN'}" 
+                       FontSize="16" 
+                       TextColor="White" 
+                       HorizontalOptions="Center" />
+            </Frame>
+
+            <!-- Main Content Area -->
+            <Grid Grid.Row="2" Margin="20,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Planet Count Circle (Top Left) -->
+                <Frame Grid.Row="0" 
+                       BackgroundColor="#333333" 
+                       CornerRadius="30" 
+                       WidthRequest="60" 
+                       HeightRequest="60"
+                       HorizontalOptions="Start"
+                       VerticalOptions="Start"
+                       Padding="0"
+                       IsVisible="{Binding HasPlanets}">
+                    
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ShowPlanetsCommand}" />
+                    </Frame.GestureRecognizers>
+
+                    <Grid>
+                        <Ellipse Fill="#00ff88" 
+                                 WidthRequest="50" 
+                                 HeightRequest="50" 
+                                 HorizontalOptions="Center" 
+                                 VerticalOptions="Center" />
+                        
+                        <Label Text="{Binding CurrentNode.PlanetCount, FallbackValue='0'}" 
+                               FontSize="20" 
+                               FontAttributes="Bold"
+                               TextColor="Black" 
+                               HorizontalOptions="Center" 
+                               VerticalOptions="Center" />
+                    </Grid>
+                </Frame>
+
+                <!-- Navigation Panel (when expanded) -->
+                <Frame Grid.Row="1" 
+                       BackgroundColor="#1a1a2e" 
+                       BorderColor="#00ff88" 
+                       CornerRadius="15" 
+                       Padding="15"
+                       IsVisible="{Binding ShowNavigation}">
+                    
+                    <CollectionView ItemsSource="{Binding AvailableNodes}" 
+                                  BackgroundColor="Transparent">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="{x:Type models:ConnectedNodeDto}">
+                                <Frame BackgroundColor="#0f0f23" 
+                                       BorderColor="#333333" 
+                                       CornerRadius="10" 
+                                       Padding="15"
+                                       Margin="0,5">
+                                    
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:GameViewModel}}, Path=NavigateToNodeCommand}"
+                                                            CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <VerticalStackLayout Grid.Column="0">
+                                            <Label Text="{Binding StarName, FallbackValue='Unknown System'}" 
+                                                   FontSize="16" 
+                                                   FontAttributes="Bold"
+                                                   TextColor="White" />
+                                            <HorizontalStackLayout Spacing="15">
+                                                <Label Text="{Binding PlanetCount, StringFormat='{0} Planets'}" 
+                                                       FontSize="12" 
+                                                       TextColor="#888888" />
+                                                <Ellipse Fill="#00ff88" 
+                                                         WidthRequest="8" 
+                                                         HeightRequest="8"
+                                                         IsVisible="{Binding HasQuantumStation}" />
+                                            </HorizontalStackLayout>
+                                        </VerticalStackLayout>
+
+                                        <Label Grid.Column="1" 
+                                               Text="→" 
+                                               FontSize="24" 
+                                               TextColor="#00ff88"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Frame>
+            </Grid>
+
+            <!-- Action Bar (Bottom) -->
+            <Grid Grid.Row="3" 
+                  BackgroundColor="#1a1a2e" 
+                  Padding="20,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Trade Button -->
+                <Frame Grid.Column="0" 
+                       BackgroundColor="#00ff88" 
+                       CornerRadius="15" 
+                       Padding="0"
+                       IsVisible="{Binding HasQuantumStation}"
+                       Margin="0,0,5,0">
+                    
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ShowTradeCommand}" />
+                    </Frame.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="5" Padding="15">
+                        <Label Text="💰" 
+                               FontSize="24" 
+                               HorizontalOptions="Center" />
+                        <Label Text="TRADE" 
+                               FontSize="12" 
+                               FontAttributes="Bold"
+                               TextColor="Black" 
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Tactical Button -->
+                <Frame Grid.Column="1" 
+                       BackgroundColor="#ff6600" 
+                       CornerRadius="15" 
+                       Padding="0"
+                       Margin="5,0">
+                    
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ShowTacticalCommand}" />
+                    </Frame.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="5" Padding="15">
+                        <Label Text="⚔️" 
+                               FontSize="24" 
+                               HorizontalOptions="Center" />
+                        <Label Text="TACTICAL" 
+                               FontSize="12" 
+                               FontAttributes="Bold"
+                               TextColor="White" 
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Navigation Button -->
+                <Frame Grid.Column="2" 
+                       BackgroundColor="#0066ff" 
+                       CornerRadius="15" 
+                       Padding="0"
+                       Margin="5,0,0,0">
+                    
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ToggleNavigationCommand}" />
+                    </Frame.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="5" Padding="15">
+                        <Label Text="🚀" 
+                               FontSize="24" 
+                               HorizontalOptions="Center" />
+                        <Label Text="NAV" 
+                               FontSize="12" 
+                               FontAttributes="Bold"
+                               TextColor="White" 
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,271 @@
+@page "/alien-races-enhanced"
+@using ChronoVoid.API.Data
+@using ChronoVoid.API.Models
+@using Microsoft.EntityFrameworkCore
+@using Radzen
+@using Radzen.Blazor
+@inject ChronoVoidContext DbContext
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>Alien Races - ChronoVoid 2500 Admin</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="admin-title">🤖 Alien Races Management</h1>
+                <button class="btn btn-primary" @onclick="NavigateToGenerate">
+                    <i class="bi bi-plus-circle"></i> Generate New Races
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-white">@totalRaces</h3>
+                    <p class="text-white mb-0">Total Races</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success">
+                <div class="card-body text-center">
+                    <h3 class="text-white">@activeRaces</h3>
+                    <p class="text-white mb-0">Active Races</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info">
+                <div class="card-body text-center">
+                    <h3 class="text-white">@averageTechLevel</h3>
+                    <p class="text-white mb-0">Avg Tech Level</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-white">@highestTechLevel</h3>
+                    <p class="text-white mb-0">Highest Tech</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Radzen DataGrid -->
+    <div class="row">
+        <div class="col-12">
+            <RadzenDataGrid @ref="grid" 
+                          Data="@races" 
+                          TItem="AlienRace" 
+                          AllowFiltering="true" 
+                          AllowSorting="true" 
+                          AllowPaging="true" 
+                          PageSize="25"
+                          FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                          FilterMode="FilterMode.Advanced"
+                          ShowPagingSummary="true"
+                          PagingSummaryFormat="Displaying page {0} of {1} (total {2} records)"
+                          Class="rz-datatable-striped">
+                
+                <Columns>
+                    <RadzenDataGridColumn TItem="AlienRace" Property="Name" Title="Name" Width="200px">
+                        <Template Context="race">
+                            <strong>@race.Name</strong>
+                            @if (!string.IsNullOrEmpty(race.AdditionalTraits))
+                            {
+                                <br><small class="text-muted">@(race.AdditionalTraits.Length > 50 ? race.AdditionalTraits.Substring(0, 50) + "..." : race.AdditionalTraits)</small>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Property="TechnologyLevel" Title="Tech Level" Width="120px">
+                        <Template Context="race">
+                            <span class="badge bg-@GetTechLevelColor(race.TechnologyLevel)">
+                                Level @race.TechnologyLevel
+                            </span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Property="Disposition" Title="Disposition" Width="150px">
+                        <Template Context="race">
+                            <span class="badge bg-@GetDispositionColor(race.Disposition)">
+                                @race.Disposition
+                            </span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Property="HumanAgreeability" Title="Human Relations" Width="150px">
+                        <Template Context="race">
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-@GetAgreeabilityColor(race.HumanAgreeability)" 
+                                     style="width: @(race.HumanAgreeability * 10)%">
+                                    @race.HumanAgreeability/10
+                                </div>
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Property="TranslatorCapable" Title="Translator" Width="100px">
+                        <Template Context="race">
+                            <span class="badge bg-@(race.TranslatorCapable ? "success" : "secondary")">
+                                @(race.TranslatorCapable ? "Yes" : "No")
+                            </span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Property="IsActive" Title="Status" Width="100px" Filterable="false">
+                        <Template Context="race">
+                            <RadzenSwitch @bind-Value="race.IsActive" 
+                                        Change="@(async () => await ToggleActiveStatus(race))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Property="CreatedAt" Title="Created" Width="150px" FormatString="{0:yyyy-MM-dd HH:mm}" />
+                    
+                    <RadzenDataGridColumn TItem="AlienRace" Title="Actions" Width="150px" Filterable="false" Sortable="false">
+                        <Template Context="race">
+                            <RadzenButton Icon="visibility" Size="ButtonSize.Small" Variant="Variant.Text" 
+                                        Click="@(() => ViewRaceDetails(race))" Title="View Details" />
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" Variant="Variant.Text" 
+                                        Click="@(() => EditRace(race))" Title="Edit Race" />
+                            <RadzenButton Icon="delete" Size="ButtonSize.Small" Variant="Variant.Text" ButtonStyle="ButtonStyle.Danger"
+                                        Click="@(() => DeleteRace(race))" Title="Delete Race" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RadzenDataGrid<AlienRace> grid = null!;
+    private List<AlienRace> races = new();
+    
+    // Statistics
+    private int totalRaces = 0;
+    private int activeRaces = 0;
+    private int averageTechLevel = 0;
+    private int highestTechLevel = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        races = await DbContext.AlienRaces.ToListAsync();
+        
+        // Calculate statistics
+        totalRaces = races.Count;
+        activeRaces = races.Count(r => r.IsActive);
+        averageTechLevel = races.Any() ? (int)races.Average(r => r.TechnologyLevel) : 0;
+        highestTechLevel = races.Any() ? races.Max(r => r.TechnologyLevel) : 0;
+        
+        StateHasChanged();
+    }
+
+    private async Task ToggleActiveStatus(AlienRace race)
+    {
+        try
+        {
+            DbContext.AlienRaces.Update(race);
+            await DbContext.SaveChangesAsync();
+            await LoadData(); // Refresh statistics
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error updating race status: {ex.Message}");
+            // Revert the change
+            race.IsActive = !race.IsActive;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ViewRaceDetails(AlienRace race)
+    {
+        var details = $"Race: {race.Name}\n" +
+                     $"Technology Level: {race.TechnologyLevel}\n" +
+                     $"Disposition: {race.Disposition}\n" +
+                     $"Human Agreeability: {race.HumanAgreeability}/10\n" +
+                     $"Translator Capable: {(race.TranslatorCapable ? "Yes" : "No")}\n" +
+                     $"Status: {(race.IsActive ? "Active" : "Inactive")}\n" +
+                     $"Created: {race.CreatedAt:yyyy-MM-dd HH:mm}\n" +
+                     $"Additional Traits: {race.AdditionalTraits ?? "None"}";
+        
+        await JSRuntime.InvokeVoidAsync("alert", details);
+    }
+
+    private async Task EditRace(AlienRace race)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Edit functionality would open a dialog here");
+    }
+
+    private async Task DeleteRace(AlienRace race)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete the race '{race.Name}'? This action cannot be undone.");
+        
+        if (confirmed)
+        {
+            try
+            {
+                DbContext.AlienRaces.Remove(race);
+                await DbContext.SaveChangesAsync();
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting race: {ex.Message}");
+            }
+        }
+    }
+
+    private void NavigateToGenerate()
+    {
+        Navigation.NavigateTo("/generate-aliens");
+    }
+
+    // Helper methods for styling
+    private string GetTechLevelColor(int techLevel)
+    {
+        return techLevel switch
+        {
+            <= 3 => "secondary",
+            <= 6 => "primary",
+            <= 8 => "warning",
+            _ => "danger"
+        };
+    }
+
+    private string GetDispositionColor(string disposition)
+    {
+        return disposition switch
+        {
+            "Peaceful" or "Pacifists" or "Diplomats" => "success",
+            "Aggressive" or "Warriors" or "Pirates" => "danger",
+            "Traders" or "Mercenaries" => "warning",
+            "Scholars" or "Scientific" => "info",
+            _ => "secondary"
+        };
+    }
+
+    private string GetAgreeabilityColor(int agreeability)
+    {
+        return agreeability switch
+        {
+            <= 3 => "danger",
+            <= 6 => "warning",
+            <= 8 => "info",
+            _ => "success"
+        };
+    }
+}

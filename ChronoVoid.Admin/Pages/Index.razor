@@ -1,0 +1,183 @@
+@page "/"
+@using ChronoVoid.API.Data
+@using Microsoft.EntityFrameworkCore
+@inject ChronoVoidContext DbContext
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Dashboard - ChronoVoid 2500 Admin</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h1 class="admin-title">🚀 ChronoVoid 2500 Admin Dashboard</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-people fs-1 text-success"></i>
+                <h3 class="text-success">@totalUsers</h3>
+                <p class="card-text">Total Users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-globe fs-1 text-info"></i>
+                <h3 class="text-info">@totalRealms</h3>
+                <p class="card-text">Active Realms</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-robot fs-1 text-warning"></i>
+                <h3 class="text-warning">@totalAlienRaces</h3>
+                <p class="card-text">Alien Races</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-planet fs-1 text-primary"></i>
+                <h3 class="text-primary">@totalPlanets</h3>
+                <p class="card-text">Total Planets</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="/create-realm" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create New Realm
+                    </a>
+                    <a href="/alien-races" class="btn btn-outline-light">
+                        <i class="bi bi-robot"></i> Manage Alien Races
+                    </a>
+                    <a href="/users" class="btn btn-outline-light">
+                        <i class="bi bi-people"></i> View Users
+                    </a>
+                    <button class="btn btn-outline-danger" @onclick="ClearAllData">
+                        <i class="bi bi-trash"></i> Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-activity"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                @if (recentRealms.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Realm Name</th>
+                                    <th>Systems</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var realm in recentRealms)
+                                {
+                                    <tr>
+                                        <td>@realm.Name</td>
+                                        <td>@realm.NodeCount.ToString("N0")</td>
+                                        <td>@realm.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td><span class="badge bg-success">Active</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No realms created yet. Create your first realm to get started!</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalUsers = 0;
+    private int totalRealms = 0;
+    private int totalAlienRaces = 0;
+    private int totalPlanets = 0;
+    private List<ChronoVoid.API.Models.NexusRealm> recentRealms = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            totalUsers = await DbContext.Users.CountAsync();
+            totalRealms = await DbContext.NexusRealms.CountAsync();
+            totalAlienRaces = await DbContext.AlienRaces.CountAsync(r => r.IsActive);
+            totalPlanets = await DbContext.Planets.CountAsync();
+            
+            recentRealms = await DbContext.NexusRealms
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle database errors gracefully
+            Console.WriteLine($"Database error: {ex.Message}");
+            totalUsers = 0;
+            totalRealms = 0;
+            totalAlienRaces = 0;
+            totalPlanets = 0;
+            recentRealms = new List<ChronoVoid.API.Models.NexusRealm>();
+        }
+    }
+
+    private async Task ClearAllData()
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to clear ALL data? This will delete all users, realms, and alien races!"))
+        {
+            try
+            {
+                // Clear all data
+                await DbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Users\" RESTART IDENTITY CASCADE");
+                await DbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"NexusRealms\" RESTART IDENTITY CASCADE");
+                await DbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"AlienRaces\" RESTART IDENTITY CASCADE");
+                
+                await LoadDashboardData();
+                await JSRuntime.InvokeVoidAsync("alert", "All data cleared successfully!");
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error clearing data: {ex.Message}");
+            }
+        }
+    }
+}

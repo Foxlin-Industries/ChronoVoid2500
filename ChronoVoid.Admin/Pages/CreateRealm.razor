@@ -1,0 +1,706 @@
+@page "/create-realm"
+@using ChronoVoid.API.Data
+@using ChronoVoid.API.Models
+@using ChronoVoid.API.Services
+@using Microsoft.EntityFrameworkCore
+@inject ChronoVoidContext DbContext
+@inject RealmGenerationService RealmService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>Create Realm - ChronoVoid 2500 Admin</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h1 class="admin-title">🌌 Create New Realm</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-gear"></i> Realm Configuration</h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@realmConfig" OnValidSubmit="@CreateRealmAsync">
+                    <DataAnnotationsValidator />
+                    
+                    <!-- Basic Settings -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-info"><i class="bi bi-info-circle"></i> Basic Settings</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Realm Name *</label>
+                            <InputText @bind-Value="realmConfig.Name" class="form-control" placeholder="Enter realm name..." />
+                            <ValidationMessage For="@(() => realmConfig.Name)" class="text-danger" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Number of Systems *</label>
+                            <InputNumber @bind-Value="realmConfig.NodeCount" class="form-control" min="10" max="10000" />
+                            <ValidationMessage For="@(() => realmConfig.NodeCount)" class="text-danger" />
+                            <small class="form-text text-muted">Recommended: 100-1000 systems</small>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea @bind-Value="realmConfig.Description" class="form-control" rows="3" placeholder="Optional description of this realm..." />
+                        </div>
+                    </div>
+
+                    <!-- Planet Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-warning"><i class="bi bi-circle"></i> Planet Configuration</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Planet Density</label>
+                            <select @bind="realmConfig.PlanetDensity" class="form-select">
+                                <option value="1">Sparse (Few planets)</option>
+                                <option value="2" selected>Default (Balanced)</option>
+                                <option value="3">Dense (Many planets)</option>
+                                <option value="4">Very Dense (Maximum planets)</option>
+                            </select>
+                            <small class="form-text text-muted">Controls overall planet frequency</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Min Planets per System</label>
+                            <InputNumber @bind-Value="realmConfig.MinPlanetsPerSystem" class="form-control" min="0" max="20" />
+                            <small class="form-text text-muted">Minimum: 0-5 recommended</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Max Planets per System</label>
+                            <InputNumber @bind-Value="realmConfig.MaxPlanetsPerSystem" class="form-control" min="1" max="20" />
+                            <small class="form-text text-muted">Maximum: 5-15 recommended</small>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <label class="form-label">Planet Purchase Contracts per Player</label>
+                            <InputNumber @bind-Value="realmConfig.PlanetPurchaseContracts" class="form-control" min="1" max="100" />
+                            <small class="form-text text-muted">How many planets each player can own</small>
+                        </div>
+                    </div>
+
+                    <!-- Resource Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-success"><i class="bi bi-gem"></i> Resource Configuration</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Resource Density</label>
+                            <select @bind="realmConfig.ResourceDensity" class="form-select">
+                                <option value="1">Very Light (Scarce resources)</option>
+                                <option value="2">Light (Limited resources)</option>
+                                <option value="3" selected>Medium (Balanced resources)</option>
+                                <option value="4">Heavy (Rich resources)</option>
+                                <option value="5">Very Heavy (Abundant resources)</option>
+                                <option value="6">Abundant (Maximum resources)</option>
+                            </select>
+                            <small class="form-text text-muted">Controls resource availability across the realm</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Quantum Station Seed Rate (%)</label>
+                            <InputNumber @bind-Value="realmConfig.QuantumStationSeedRate" class="form-control" min="0" max="100" />
+                            <small class="form-text text-muted">Percentage of systems with quantum stations</small>
+                        </div>
+                    </div>
+
+                    <!-- Alien Race Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-danger"><i class="bi bi-robot"></i> Alien Race Configuration</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Number of Active Alien Races</label>
+                            <InputNumber @bind-Value="realmConfig.ActiveAlienRaces" class="form-control" min="0" max="20" />
+                            <small class="form-text text-muted">0 = No alien races</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Min Tech Level</label>
+                            <InputNumber @bind-Value="realmConfig.MinAlienTechLevel" class="form-control" min="1" max="10" />
+                            <small class="form-text text-muted">Minimum alien technology level</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Max Tech Level</label>
+                            <InputNumber @bind-Value="realmConfig.MaxAlienTechLevel" class="form-control" min="1" max="10" />
+                            <small class="form-text text-muted">Maximum alien technology level</small>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Features -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary"><i class="bi bi-stars"></i> Advanced Features</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <InputCheckbox @bind-Value="realmConfig.EnableArtifactSystems" class="form-check-input" id="artifactSystems" />
+                                <label class="form-check-label" for="artifactSystems">
+                                    Enable Artifact Systems
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">Special systems with ancient artifacts</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Artifact System Chance (%)</label>
+                            <InputNumber @bind-Value="artifactChancePercent" class="form-control" min="0" max="100" disabled="@(!realmConfig.EnableArtifactSystems)" />
+                            <small class="form-text text-muted">Chance for artifact systems to spawn</small>
+                        </div>
+                    </div>
+
+                    <!-- Resource Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-warning"><i class="bi bi-gem"></i> Resource Configuration</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Resource Abundance</label>
+                            <InputSelect @bind-Value="realmConfig.ResourceAbundance" class="form-select">
+                                <option value="Scarce">Scarce Resources</option>
+                                <option value="Light">Light Resources</option>
+                                <option value="Medium">Medium Resources</option>
+                                <option value="Heavy">Heavy Resources</option>
+                                <option value="Abundant">Abundant Resources</option>
+                            </InputSelect>
+                            <small class="form-text text-muted">Overall resource availability</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Rare Resource Chance (%)</label>
+                            <InputNumber @bind-Value="realmConfig.RareResourceChance" class="form-control" min="0" max="100" />
+                            <small class="form-text text-muted">Chance for rare/exotic resources</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Resource Distribution</label>
+                            <InputSelect @bind-Value="realmConfig.ResourceDistribution" class="form-select">
+                                <option value="Clustered">Clustered (resources grouped)</option>
+                                <option value="Balanced">Balanced Distribution</option>
+                                <option value="Random">Random Distribution</option>
+                            </InputSelect>
+                            <small class="form-text text-muted">How resources are spread</small>
+                        </div>
+                    </div>
+
+                    <!-- Planet Generation Settings -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-success"><i class="bi bi-globe"></i> Planet Generation</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Planet Density</label>
+                            <InputSelect @bind-Value="realmConfig.PlanetDensityType" class="form-select">
+                                <option value="Sparse">Sparse (3-5 planets)</option>
+                                <option value="Default">Default (6-9 planets)</option>
+                                <option value="Dense">Dense (10-15 planets)</option>
+                            </InputSelect>
+                            <small class="form-text text-muted">Average planets per system</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Habitable Planet Chance (%)</label>
+                            <InputNumber @bind-Value="realmConfig.HabitablePlanetChance" class="form-control" min="0" max="100" />
+                            <small class="form-text text-muted">Chance planets are habitable</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Gas Giant Chance (%)</label>
+                            <InputNumber @bind-Value="realmConfig.GasGiantChance" class="form-control" min="0" max="100" />
+                            <small class="form-text text-muted">Chance for gas giants</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Special Feature Chance (%)</label>
+                            <InputNumber @bind-Value="realmConfig.SpecialFeatureChance" class="form-control" min="0" max="100" />
+                            <small class="form-text text-muted">Unique planetary features</small>
+                        </div>
+                    </div>
+
+                    <!-- Available Alien Races Selection -->
+                    @if (realmConfig.ActiveAlienRaces > 0 && availableRaces.Any())
+                    {
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-info"><i class="bi bi-list-check"></i> Select Alien Races (@selectedRaces.Count/@realmConfig.ActiveAlienRaces)</h6>
+                                
+                                <!-- Race Filters -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" placeholder="Search races..." 
+                                               @bind="raceSearchFilter" @oninput="FilterRaces" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" @bind="dispositionFilter" @bind:after="FilterRaces">
+                                            <option value="">All Dispositions</option>
+                                            <option value="Peaceful">Peaceful</option>
+                                            <option value="Aggressive">Aggressive</option>
+                                            <option value="Traders">Traders</option>
+                                            <option value="Scholars">Scholars</option>
+                                            <option value="Warriors">Warriors</option>
+                                            <option value="Diplomats">Diplomats</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select" @bind="techLevelFilter" @bind:after="FilterRaces">
+                                            <option value="">All Tech Levels</option>
+                                            @for (int i = 1; i <= 10; i++)
+                                            {
+                                                <option value="@i">Level @i</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select" @bind="raceSortOrder" @bind:after="FilterRaces">
+                                            <option value="name">Sort by Name</option>
+                                            <option value="tech">Sort by Tech Level</option>
+                                            <option value="disposition">Sort by Disposition</option>
+                                            <option value="agreeability">Sort by Agreeability</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="ClearRaceFilters">
+                                            <i class="bi bi-x-circle"></i> Clear
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Filtered Race Selection -->
+                                <div class="row" style="max-height: 400px; overflow-y: auto;">
+                                    @foreach (var race in filteredRaces)
+                                    {
+                                        <div class="col-md-6 col-lg-4 mb-2">
+                                            <div class="card @(selectedRaces.Contains(race.Id) ? "border-success" : "")">
+                                                <div class="card-body p-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               checked="@selectedRaces.Contains(race.Id)"
+                                                               @onchange="@((e) => ToggleRaceSelection(race.Id, (bool)e.Value!))"
+                                                               disabled="@(!selectedRaces.Contains(race.Id) && selectedRaces.Count >= realmConfig.ActiveAlienRaces)"
+                                                               id="race_@race.Id" />
+                                                        <label class="form-check-label" for="race_@race.Id">
+                                                            <strong>@race.Name</strong>
+                                                            <div class="mt-1">
+                                                                <span class="badge bg-@GetTechLevelColor(race.TechnologyLevel) me-1">L@race.TechnologyLevel</span>
+                                                                <span class="badge bg-@GetDispositionColor(race.Disposition) me-1">@race.Disposition</span>
+                                                                <span class="badge bg-@GetAgreeabilityColor(race.HumanAgreeability)">@race.HumanAgreeability/10</span>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(race.AdditionalTraits))
+                                                            {
+                                                                <small class="text-muted d-block mt-1">@race.AdditionalTraits.Substring(0, Math.Min(60, race.AdditionalTraits.Length))@(race.AdditionalTraits.Length > 60 ? "..." : "")</small>
+                                                            }
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                
+                                @if (selectedRaces.Count != realmConfig.ActiveAlienRaces)
+                                {
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Please select exactly @realmConfig.ActiveAlienRaces alien race(s). Currently selected: @selectedRaces.Count
+                                    </div>
+                                }
+                                
+                                @if (!filteredRaces.Any())
+                                {
+                                    <div class="alert alert-info mt-2">
+                                        <i class="bi bi-info-circle"></i>
+                                        No races match the current filters. Try adjusting your search criteria.
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" disabled="@isCreating">
+                                    @if (isCreating)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <text>Creating Realm...</text>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-plus-circle"></i>
+                                        <text>Create Realm</text>
+                                    }
+                                </button>
+                                <a href="/realms" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Configuration Preview</h5>
+            </div>
+            <div class="card-body">
+                <h6>Basic Settings</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Name:</strong> @(string.IsNullOrEmpty(realmConfig.Name) ? "Not set" : realmConfig.Name)</li>
+                    <li><strong>Systems:</strong> @realmConfig.NodeCount.ToString("N0")</li>
+                </ul>
+                
+                <h6>Planet Configuration</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Density:</strong> @GetDensityName(realmConfig.PlanetDensity)</li>
+                    <li><strong>Per System:</strong> @realmConfig.MinPlanetsPerSystem - @realmConfig.MaxPlanetsPerSystem</li>
+                    <li><strong>Purchase Contracts:</strong> @realmConfig.PlanetPurchaseContracts</li>
+                </ul>
+                
+                <h6>Resources</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Density:</strong> @GetResourceName(realmConfig.ResourceDensity)</li>
+                    <li><strong>Quantum Stations:</strong> @realmConfig.QuantumStationSeedRate%</li>
+                </ul>
+                
+                <h6>Alien Races</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Active Races:</strong> @realmConfig.ActiveAlienRaces</li>
+                    @if (realmConfig.ActiveAlienRaces > 0)
+                    {
+                        <li><strong>Tech Range:</strong> @(realmConfig.MinAlienTechLevel ?? 1) - @(realmConfig.MaxAlienTechLevel ?? 10)</li>
+                    }
+                </ul>
+                
+                @if (realmConfig.EnableArtifactSystems)
+                {
+                    <h6>Special Features</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Artifact Systems:</strong> @artifactChancePercent% chance</li>
+                    </ul>
+                }
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <strong>Estimated Generation Time:</strong><br>
+                        @GetEstimatedTime() seconds
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        @if (availableRaces.Any())
+        {
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="bi bi-robot"></i> Available Alien Races (@availableRaces.Count)</h5>
+                </div>
+                <div class="card-body">
+                    @if (availableRaces.Count == 0)
+                    {
+                        <p class="text-muted">No alien races available. Create some alien races first.</p>
+                    }
+                    else
+                    {
+                        <small class="text-muted">
+                            You have @availableRaces.Count alien races available for selection.
+                            Tech levels range from @availableRaces.Min(r => r.TechnologyLevel) to @availableRaces.Max(r => r.TechnologyLevel).
+                        </small>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private RealmConfiguration realmConfig = new();
+    private List<AlienRace> availableRaces = new();
+    private List<AlienRace> filteredRaces = new();
+    private HashSet<int> selectedRaces = new();
+    private bool isCreating = false;
+    private double artifactChancePercent = 5.0;
+    
+    // Race filtering
+    private string raceSearchFilter = string.Empty;
+    private string dispositionFilter = string.Empty;
+    private string techLevelFilter = string.Empty;
+    private string raceSortOrder = "name";
+
+    public class RealmConfiguration
+    {
+        [Required]
+        [StringLength(100, MinimumLength = 3)]
+        public string Name { get; set; } = "";
+        
+        [Range(10, 10000)]
+        public int NodeCount { get; set; } = 100;
+        
+        public string? Description { get; set; }
+        
+        [Range(1, 4)]
+        public int PlanetDensity { get; set; } = 2;
+        
+        [Range(0, 20)]
+        public int MinPlanetsPerSystem { get; set; } = 0;
+        
+        [Range(1, 20)]
+        public int MaxPlanetsPerSystem { get; set; } = 8;
+        
+        [Range(1, 100)]
+        public int PlanetPurchaseContracts { get; set; } = 5;
+        
+        [Range(1, 6)]
+        public int ResourceDensity { get; set; } = 3;
+        
+        [Range(0, 100)]
+        public int QuantumStationSeedRate { get; set; } = 15;
+        
+        [Range(0, 20)]
+        public int ActiveAlienRaces { get; set; } = 0;
+        
+        [Range(1, 10)]
+        public int? MinAlienTechLevel { get; set; } = 1;
+        
+        [Range(1, 10)]
+        public int? MaxAlienTechLevel { get; set; } = 10;
+        
+        public bool EnableArtifactSystems { get; set; } = false;
+        
+        public double ArtifactSystemChance { get; set; } = 0.05;
+        
+        // Resource Configuration
+        public string ResourceAbundance { get; set; } = "Medium";
+        
+        [Range(0, 100)]
+        public int RareResourceChance { get; set; } = 15;
+        
+        public string ResourceDistribution { get; set; } = "Balanced";
+        
+        // Planet Generation (override existing PlanetDensity with string)
+        public string PlanetDensityType { get; set; } = "Default";
+        
+        [Range(0, 100)]
+        public int HabitablePlanetChance { get; set; } = 25;
+        
+        [Range(0, 100)]
+        public int GasGiantChance { get; set; } = 30;
+        
+        [Range(0, 100)]
+        public int SpecialFeatureChance { get; set; } = 10;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableRaces = await DbContext.AlienRaces
+            .Where(r => r.IsActive)
+            .OrderBy(r => r.Name)
+            .ToListAsync();
+        
+        FilterRaces();
+    }
+
+    private void ToggleRaceSelection(int raceId, bool selected)
+    {
+        if (selected)
+        {
+            if (selectedRaces.Count < realmConfig.ActiveAlienRaces)
+            {
+                selectedRaces.Add(raceId);
+            }
+        }
+        else
+        {
+            selectedRaces.Remove(raceId);
+        }
+        StateHasChanged();
+    }
+
+    private void FilterRaces()
+    {
+        var filtered = availableRaces.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(raceSearchFilter))
+        {
+            filtered = filtered.Where(r => r.Name.Contains(raceSearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                                          (!string.IsNullOrEmpty(r.AdditionalTraits) && r.AdditionalTraits.Contains(raceSearchFilter, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        // Apply disposition filter
+        if (!string.IsNullOrEmpty(dispositionFilter))
+        {
+            filtered = filtered.Where(r => r.Disposition.Equals(dispositionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply tech level filter
+        if (!string.IsNullOrEmpty(techLevelFilter) && int.TryParse(techLevelFilter, out int techLevel))
+        {
+            filtered = filtered.Where(r => r.TechnologyLevel == techLevel);
+        }
+
+        // Apply tech level constraints from realm config
+        if (realmConfig.MinAlienTechLevel.HasValue)
+        {
+            filtered = filtered.Where(r => r.TechnologyLevel >= realmConfig.MinAlienTechLevel.Value);
+        }
+
+        if (realmConfig.MaxAlienTechLevel.HasValue)
+        {
+            filtered = filtered.Where(r => r.TechnologyLevel <= realmConfig.MaxAlienTechLevel.Value);
+        }
+
+        // Apply sorting
+        filtered = raceSortOrder switch
+        {
+            "tech" => filtered.OrderBy(r => r.TechnologyLevel).ThenBy(r => r.Name),
+            "disposition" => filtered.OrderBy(r => r.Disposition).ThenBy(r => r.Name),
+            "agreeability" => filtered.OrderByDescending(r => r.HumanAgreeability).ThenBy(r => r.Name),
+            _ => filtered.OrderBy(r => r.Name)
+        };
+
+        filteredRaces = filtered.ToList();
+        StateHasChanged();
+    }
+
+    private void ClearRaceFilters()
+    {
+        raceSearchFilter = string.Empty;
+        dispositionFilter = string.Empty;
+        techLevelFilter = string.Empty;
+        raceSortOrder = "name";
+        FilterRaces();
+    }
+
+    private async Task CreateRealmAsync()
+    {
+        if (realmConfig.ActiveAlienRaces > 0 && selectedRaces.Count != realmConfig.ActiveAlienRaces)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Please select exactly {realmConfig.ActiveAlienRaces} alien race(s).");
+            return;
+        }
+
+        if (realmConfig.MinPlanetsPerSystem > realmConfig.MaxPlanetsPerSystem)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Minimum planets per system cannot be greater than maximum.");
+            return;
+        }
+
+        if (realmConfig.MinAlienTechLevel > realmConfig.MaxAlienTechLevel)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Minimum alien tech level cannot be greater than maximum.");
+            return;
+        }
+
+        isCreating = true;
+        StateHasChanged();
+
+        try
+        {
+            // Update artifact chance from percentage
+            realmConfig.ArtifactSystemChance = artifactChancePercent / 100.0;
+
+            // Create the realm
+            var realm = new NexusRealm
+            {
+                Name = realmConfig.Name,
+                NodeCount = realmConfig.NodeCount,
+                Description = realmConfig.Description,
+                PlanetDensity = realmConfig.PlanetDensity,
+                MinPlanetsPerSystem = realmConfig.MinPlanetsPerSystem,
+                MaxPlanetsPerSystem = realmConfig.MaxPlanetsPerSystem,
+                PlanetPurchaseContracts = realmConfig.PlanetPurchaseContracts,
+                ResourceDensity = realmConfig.ResourceDensity,
+                QuantumStationSeedRate = realmConfig.QuantumStationSeedRate,
+                ActiveAlienRaces = realmConfig.ActiveAlienRaces,
+                MinAlienTechLevel = realmConfig.MinAlienTechLevel,
+                MaxAlienTechLevel = realmConfig.MaxAlienTechLevel,
+                EnableArtifactSystems = realmConfig.EnableArtifactSystems,
+                ArtifactSystemChance = realmConfig.ArtifactSystemChance,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            DbContext.NexusRealms.Add(realm);
+            await DbContext.SaveChangesAsync();
+
+            // Generate the realm using the service
+            await RealmService.CreateRealmAsync(realm.Name, realm.NodeCount, realm.QuantumStationSeedRate, true);
+
+            await JSRuntime.InvokeVoidAsync("alert", $"Realm '{realm.Name}' created successfully with {realm.NodeCount:N0} systems!");
+            Navigation.NavigateTo("/realms");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error creating realm: {ex.Message}");
+        }
+        finally
+        {
+            isCreating = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetDensityName(int density)
+    {
+        return density switch
+        {
+            1 => "Sparse",
+            2 => "Default",
+            3 => "Dense",
+            4 => "Very Dense",
+            _ => "Unknown"
+        };
+    }
+
+    private string GetResourceName(int resource)
+    {
+        return resource switch
+        {
+            1 => "Very Light",
+            2 => "Light",
+            3 => "Medium",
+            4 => "Heavy",
+            5 => "Very Heavy",
+            6 => "Abundant",
+            _ => "Unknown"
+        };
+    }
+
+    private string GetTechLevelColor(int techLevel)
+    {
+        return techLevel switch
+        {
+            <= 3 => "secondary",
+            <= 6 => "primary",
+            <= 8 => "warning",
+            _ => "danger"
+        };
+    }
+
+    private string GetDispositionColor(string disposition)
+    {
+        return disposition switch
+        {
+            "Peaceful" or "Pacifists" or "Diplomats" => "success",
+            "Aggressive" or "Warriors" or "Pirates" => "danger",
+            "Traders" or "Mercenaries" => "warning",
+            "Scholars" or "Scientific" => "info",
+            _ => "secondary"
+        };
+    }
+
+    private string GetAgreeabilityColor(int agreeability)
+    {
+        return agreeability switch
+        {
+            <= 3 => "danger",
+            <= 6 => "warning",
+            <= 8 => "info",
+            _ => "success"
+        };
+    }
+
+    private int GetEstimatedTime()
+    {
+        // Rough estimation based on system count
+        return Math.Max(1, realmConfig.NodeCount / 100);
+    }
+}

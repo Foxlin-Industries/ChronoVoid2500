@@ -17,3 +17,5 @@ Assets/AssetStoreTools*
 # Ignore OS files
 .DS_Store
 Thumbs.db
+# SSH Keys (local only)
+.ssh/

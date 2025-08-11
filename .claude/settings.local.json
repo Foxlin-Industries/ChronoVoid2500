@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet --version)",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet ef database:*)",
+      "Bash(dotnet build)",
+      "Bash(start /B dotnet run:*)",
+      "Bash(dotnet run:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill /f /im dotnet.exe)",
+      "Bash(mkdir:*)",
+      "Bash(dotnet build:*)"
+    ],
+    "deny": []
+  }
+}

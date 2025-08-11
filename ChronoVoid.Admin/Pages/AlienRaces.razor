@@ -1,0 +1,412 @@
+@page "/alien-races"
+@using ChronoVoid.API.Data
+@using ChronoVoid.API.Models
+@using Microsoft.EntityFrameworkCore
+@inject ChronoVoidContext DbContext
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Alien Races - ChronoVoid 2500 Admin</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h1 class="admin-title">🤖 Alien Race Management</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-robot fs-1 text-success"></i>
+                <h3 class="text-success">@totalRaces</h3>
+                <p class="card-text">Total Races</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle fs-1 text-info"></i>
+                <h3 class="text-info">@activeRaces</h3>
+                <p class="card-text">Active Races</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-shield fs-1 text-warning"></i>
+                <h3 class="text-warning">@averageTechLevel</h3>
+                <p class="card-text">Avg Tech Level</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-star fs-1 text-primary"></i>
+                <h3 class="text-primary">@highestTechLevel</h3>
+                <p class="card-text">Highest Tech</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-funnel"></i> Filters & Actions</h5>
+                <div>
+                    <button class="btn btn-primary btn-sm" @onclick="CreateNewRace">
+                        <i class="bi bi-plus-circle"></i> Create Race
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" @onclick="RefreshData">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Search Name</label>
+                        <input type="text" class="form-control" @bind="nameFilter" @oninput="ApplyFilters" placeholder="Search by name...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" @bind="statusFilter" @bind:after="ApplyFilters">
+                            <option value="">All</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Min Tech Level</label>
+                        <input type="number" class="form-control" @bind="minTechFilter" @oninput="ApplyFilters" min="1" max="10">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Max Tech Level</label>
+                        <input type="number" class="form-control" @bind="maxTechFilter" @oninput="ApplyFilters" min="1" max="10">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary" @onclick="ClearFilters">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-table"></i> Alien Races (@filteredRaces.Count)</h5>
+            </div>
+            <div class="card-body">
+                @if (filteredRaces.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="cursor: pointer;" @onclick="() => SortBy(nameof(AlienRace.Name))">
+                                        Name 
+                                        @if (sortColumn == nameof(AlienRace.Name))
+                                        {
+                                            <i class="bi bi-arrow-@(sortAscending ? "up" : "down")"></i>
+                                        }
+                                    </th>
+                                    <th style="cursor: pointer;" @onclick="() => SortBy(nameof(AlienRace.TechnologyLevel))">
+                                        Tech Level
+                                        @if (sortColumn == nameof(AlienRace.TechnologyLevel))
+                                        {
+                                            <i class="bi bi-arrow-@(sortAscending ? "up" : "down")"></i>
+                                        }
+                                    </th>
+                                    <th>Disposition</th>
+                                    <th>Human Relations</th>
+                                    <th>Translator</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var race in GetPagedRaces())
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@race.Name</strong>
+                                            @if (!string.IsNullOrEmpty(race.AdditionalTraits))
+                                            {
+                                                <br><small class="text-muted">@race.AdditionalTraits.Substring(0, Math.Min(50, race.AdditionalTraits.Length))@(race.AdditionalTraits.Length > 50 ? "..." : "")</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@GetTechLevelColor(race.TechnologyLevel)">
+                                                Level @race.TechnologyLevel
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@GetDispositionColor(race.Disposition)">
+                                                @race.Disposition
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-@GetAgreeabilityColor(race.HumanAgreeability)" style="width: @(race.HumanAgreeability * 10)%">
+                                                    @race.HumanAgreeability/10
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@(race.TranslatorCapable ? "success" : "secondary")">
+                                                @(race.TranslatorCapable ? "Yes" : "No")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@(race.IsActive ? "success" : "secondary")">
+                                                @(race.IsActive ? "Active" : "Inactive")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-info" @onclick="() => ViewDetails(race)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" @onclick="() => EditRace(race)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" @onclick="() => DeleteRace(race.Id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                            </li>
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <button class="page-link" @onclick="() => ChangePage(i)">@i</button>
+                                </li>
+                            }
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-robot fs-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">No alien races found</h4>
+                        <p class="text-muted">Create your first alien race to get started!</p>
+                        <button class="btn btn-primary" @onclick="CreateNewRace">
+                            <i class="bi bi-plus-circle"></i> Create First Race
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<AlienRace> allRaces = new();
+    private List<AlienRace> filteredRaces = new();
+    
+    private int totalRaces = 0;
+    private int activeRaces = 0;
+    private int averageTechLevel = 0;
+    private int highestTechLevel = 0;
+    
+    private string nameFilter = "";
+    private string statusFilter = "";
+    private int? minTechFilter;
+    private int? maxTechFilter;
+    
+    private string sortColumn = nameof(AlienRace.Name);
+    private bool sortAscending = true;
+    
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages => (int)Math.Ceiling((double)filteredRaces.Count / pageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        allRaces = await DbContext.AlienRaces.ToListAsync();
+        
+        totalRaces = allRaces.Count;
+        activeRaces = allRaces.Count(r => r.IsActive);
+        averageTechLevel = allRaces.Any() ? (int)allRaces.Average(r => r.TechnologyLevel) : 0;
+        highestTechLevel = allRaces.Any() ? allRaces.Max(r => r.TechnologyLevel) : 0;
+        
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredRaces = allRaces.Where(r =>
+            (string.IsNullOrEmpty(nameFilter) || r.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(statusFilter) || r.IsActive.ToString().Equals(statusFilter, StringComparison.OrdinalIgnoreCase)) &&
+            (!minTechFilter.HasValue || r.TechnologyLevel >= minTechFilter.Value) &&
+            (!maxTechFilter.HasValue || r.TechnologyLevel <= maxTechFilter.Value)
+        ).ToList();
+        
+        ApplySort();
+        currentPage = 1;
+        StateHasChanged();
+    }
+
+    private void ApplySort()
+    {
+        filteredRaces = sortColumn switch
+        {
+            nameof(AlienRace.Name) => sortAscending 
+                ? filteredRaces.OrderBy(r => r.Name).ToList()
+                : filteredRaces.OrderByDescending(r => r.Name).ToList(),
+            nameof(AlienRace.TechnologyLevel) => sortAscending 
+                ? filteredRaces.OrderBy(r => r.TechnologyLevel).ToList()
+                : filteredRaces.OrderByDescending(r => r.TechnologyLevel).ToList(),
+            _ => filteredRaces
+        };
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplySort();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        nameFilter = "";
+        statusFilter = "";
+        minTechFilter = null;
+        maxTechFilter = null;
+        ApplyFilters();
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+        {
+            currentPage = page;
+            StateHasChanged();
+        }
+    }
+
+    private List<AlienRace> GetPagedRaces()
+    {
+        return filteredRaces
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private string GetTechLevelColor(int techLevel)
+    {
+        return techLevel switch
+        {
+            <= 3 => "secondary",
+            <= 6 => "primary",
+            <= 8 => "warning",
+            _ => "danger"
+        };
+    }
+
+    private string GetDispositionColor(string disposition)
+    {
+        return disposition switch
+        {
+            "Peaceful" or "Pacifists" or "Diplomats" => "success",
+            "Aggressive" or "Warriors" or "Pirates" => "danger",
+            "Traders" or "Mercenaries" => "warning",
+            "Scholars" or "Scientific" => "info",
+            _ => "secondary"
+        };
+    }
+
+    private string GetAgreeabilityColor(int agreeability)
+    {
+        return agreeability switch
+        {
+            <= 3 => "danger",
+            <= 6 => "warning",
+            <= 8 => "info",
+            _ => "success"
+        };
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+    }
+
+    private async Task CreateNewRace()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Create new race functionality coming soon!");
+    }
+
+    private async Task ViewDetails(AlienRace race)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Viewing details for {race.Name}");
+    }
+
+    private async Task EditRace(AlienRace race)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Edit functionality for {race.Name} coming soon!");
+    }
+
+    private async Task DeleteRace(int raceId)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this alien race?"))
+        {
+            try
+            {
+                var race = await DbContext.AlienRaces.FindAsync(raceId);
+                if (race != null)
+                {
+                    DbContext.AlienRaces.Remove(race);
+                    await DbContext.SaveChangesAsync();
+                    await LoadData();
+                    await JSRuntime.InvokeVoidAsync("alert", "Alien race deleted successfully!");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting race: {ex.Message}");
+            }
+        }
+    }
+}

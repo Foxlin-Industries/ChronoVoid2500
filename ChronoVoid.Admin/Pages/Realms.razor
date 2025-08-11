@@ -1,0 +1,497 @@
+@page "/realms"
+@using ChronoVoid.API.Data
+@using ChronoVoid.API.Models
+@using Microsoft.EntityFrameworkCore
+@inject ChronoVoidContext DbContext
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Realms - ChronoVoid 2500 Admin</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h1 class="admin-title">🌌 Realm Management</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-globe fs-1 text-success"></i>
+                <h3 class="text-success">@totalRealms</h3>
+                <p class="card-text">Total Realms</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-diagram-3 fs-1 text-info"></i>
+                <h3 class="text-info">@totalSystems</h3>
+                <p class="card-text">Total Systems</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-circle fs-1 text-warning"></i>
+                <h3 class="text-warning">@totalPlanets</h3>
+                <p class="card-text">Total Planets</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-people fs-1 text-primary"></i>
+                <h3 class="text-primary">@totalUsersInRealms</h3>
+                <p class="card-text">Users in Realms</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-funnel"></i> Filters & Actions</h5>
+                <div>
+                    <a href="/create-realm" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Realm
+                    </a>
+                    <button class="btn btn-outline-light btn-sm" @onclick="RefreshData">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Search Name</label>
+                        <input type="text" class="form-control" @bind="nameFilter" @oninput="ApplyFilters" placeholder="Search realm names...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Min Systems</label>
+                        <input type="number" class="form-control" @bind="minSystemsFilter" @oninput="ApplyFilters" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Max Systems</label>
+                        <input type="number" class="form-control" @bind="maxSystemsFilter" @oninput="ApplyFilters" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Has Users</label>
+                        <select class="form-select" @bind="hasUsersFilter" @bind:after="ApplyFilters">
+                            <option value="">All</option>
+                            <option value="true">With Users</option>
+                            <option value="false">No Users</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary" @onclick="ClearFilters">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-table"></i> Realms (@filteredRealms.Count)</h5>
+            </div>
+            <div class="card-body">
+                @if (filteredRealms.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="cursor: pointer;" @onclick="() => SortBy(nameof(NexusRealm.Name))">
+                                        Realm Name
+                                        @if (sortColumn == nameof(NexusRealm.Name))
+                                        {
+                                            <i class="bi bi-arrow-@(sortAscending ? "up" : "down")"></i>
+                                        }
+                                    </th>
+                                    <th style="cursor: pointer;" @onclick="() => SortBy(nameof(NexusRealm.NodeCount))">
+                                        Systems
+                                        @if (sortColumn == nameof(NexusRealm.NodeCount))
+                                        {
+                                            <i class="bi bi-arrow-@(sortAscending ? "up" : "down")"></i>
+                                        }
+                                    </th>
+                                    <th>Planets</th>
+                                    <th>Users</th>
+                                    <th>Planet Density</th>
+                                    <th>Resource Density</th>
+                                    <th>Alien Races</th>
+                                    <th style="cursor: pointer;" @onclick="() => SortBy(nameof(NexusRealm.CreatedAt))">
+                                        Created
+                                        @if (sortColumn == nameof(NexusRealm.CreatedAt))
+                                        {
+                                            <i class="bi bi-arrow-@(sortAscending ? "up" : "down")"></i>
+                                        }
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var realm in GetPagedRealms())
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@realm.Name</strong>
+                                            @if (!string.IsNullOrEmpty(realm.Description))
+                                            {
+                                                <br><small class="text-muted">@realm.Description.Substring(0, Math.Min(40, realm.Description.Length))@(realm.Description.Length > 40 ? "..." : "")</small>
+                                            }
+                                        </td>
+                                        <td>@realm.NodeCount.ToString("N0")</td>
+                                        <td>@GetPlanetCount(realm.Id).ToString("N0")</td>
+                                        <td>@GetUserCount(realm.Id)</td>
+                                        <td>
+                                            <span class="badge bg-@GetDensityColor(realm.PlanetDensity)">
+                                                @GetDensityName(realm.PlanetDensity)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@GetResourceColor(realm.ResourceDensity)">
+                                                @GetResourceName(realm.ResourceDensity)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (realm.ActiveAlienRaces > 0)
+                                            {
+                                                <span class="badge bg-purple">@realm.ActiveAlienRaces races</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">None</span>
+                                            }
+                                        </td>
+                                        <td>@realm.CreatedAt.ToString("MM/dd/yyyy")</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-info" @onclick="() => ViewRealmDetails(realm)">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" @onclick="() => ViewRealmUsers(realm)">
+                                                    <i class="bi bi-people"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" @onclick="() => DeleteRealm(realm.Id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                            </li>
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <button class="page-link" @onclick="() => ChangePage(i)">@i</button>
+                                </li>
+                            }
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-globe fs-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">No realms found</h4>
+                        <p class="text-muted">Create your first realm to get started!</p>
+                        <a href="/create-realm" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create First Realm
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<NexusRealm> allRealms = new();
+    private List<NexusRealm> filteredRealms = new();
+    
+    private int totalRealms = 0;
+    private int totalSystems = 0;
+    private int totalPlanets = 0;
+    private int totalUsersInRealms = 0;
+    
+    private string nameFilter = "";
+    private int? minSystemsFilter;
+    private int? maxSystemsFilter;
+    private string hasUsersFilter = "";
+    
+    private string sortColumn = nameof(NexusRealm.CreatedAt);
+    private bool sortAscending = false;
+    
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages => (int)Math.Ceiling((double)filteredRealms.Count / pageSize);
+    
+    private Dictionary<int, int> planetCounts = new();
+    private Dictionary<int, int> userCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        allRealms = await DbContext.NexusRealms.ToListAsync();
+        
+        totalRealms = allRealms.Count;
+        totalSystems = allRealms.Sum(r => r.NodeCount);
+        totalPlanets = await DbContext.Planets.CountAsync();
+        totalUsersInRealms = await DbContext.Users.CountAsync(u => u.RealmId.HasValue);
+        
+        // Load counts for each realm
+        foreach (var realm in allRealms)
+        {
+            planetCounts[realm.Id] = await DbContext.Planets
+                .Where(p => p.Node.RealmId == realm.Id)
+                .CountAsync();
+                
+            userCounts[realm.Id] = await DbContext.Users
+                .CountAsync(u => u.RealmId == realm.Id);
+        }
+        
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredRealms = allRealms.Where(r =>
+            (string.IsNullOrEmpty(nameFilter) || r.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase)) &&
+            (!minSystemsFilter.HasValue || r.NodeCount >= minSystemsFilter.Value) &&
+            (!maxSystemsFilter.HasValue || r.NodeCount <= maxSystemsFilter.Value) &&
+            (string.IsNullOrEmpty(hasUsersFilter) ||
+                (hasUsersFilter == "true" && GetUserCount(r.Id) > 0) ||
+                (hasUsersFilter == "false" && GetUserCount(r.Id) == 0))
+        ).ToList();
+        
+        ApplySort();
+        currentPage = 1;
+        StateHasChanged();
+    }
+
+    private void ApplySort()
+    {
+        filteredRealms = sortColumn switch
+        {
+            nameof(NexusRealm.Name) => sortAscending 
+                ? filteredRealms.OrderBy(r => r.Name).ToList()
+                : filteredRealms.OrderByDescending(r => r.Name).ToList(),
+            nameof(NexusRealm.NodeCount) => sortAscending 
+                ? filteredRealms.OrderBy(r => r.NodeCount).ToList()
+                : filteredRealms.OrderByDescending(r => r.NodeCount).ToList(),
+            nameof(NexusRealm.CreatedAt) => sortAscending 
+                ? filteredRealms.OrderBy(r => r.CreatedAt).ToList()
+                : filteredRealms.OrderByDescending(r => r.CreatedAt).ToList(),
+            _ => filteredRealms
+        };
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplySort();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        nameFilter = "";
+        minSystemsFilter = null;
+        maxSystemsFilter = null;
+        hasUsersFilter = "";
+        ApplyFilters();
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+        {
+            currentPage = page;
+            StateHasChanged();
+        }
+    }
+
+    private List<NexusRealm> GetPagedRealms()
+    {
+        return filteredRealms
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private int GetPlanetCount(int realmId)
+    {
+        return planetCounts.GetValueOrDefault(realmId, 0);
+    }
+
+    private int GetUserCount(int realmId)
+    {
+        return userCounts.GetValueOrDefault(realmId, 0);
+    }
+
+    private string GetDensityName(int density)
+    {
+        return density switch
+        {
+            1 => "Sparse",
+            2 => "Default",
+            3 => "Dense",
+            4 => "Very Dense",
+            _ => "Unknown"
+        };
+    }
+
+    private string GetDensityColor(int density)
+    {
+        return density switch
+        {
+            1 => "secondary",
+            2 => "primary",
+            3 => "warning",
+            4 => "danger",
+            _ => "dark"
+        };
+    }
+
+    private string GetResourceName(int resource)
+    {
+        return resource switch
+        {
+            1 => "Very Light",
+            2 => "Light",
+            3 => "Medium",
+            4 => "Heavy",
+            5 => "Very Heavy",
+            6 => "Abundant",
+            _ => "Unknown"
+        };
+    }
+
+    private string GetResourceColor(int resource)
+    {
+        return resource switch
+        {
+            1 => "secondary",
+            2 => "info",
+            3 => "primary",
+            4 => "warning",
+            5 => "danger",
+            6 => "success",
+            _ => "dark"
+        };
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+    }
+
+    private async Task ViewRealmDetails(NexusRealm realm)
+    {
+        var details = $"Realm: {realm.Name}\n" +
+                     $"Systems: {realm.NodeCount:N0}\n" +
+                     $"Planets: {GetPlanetCount(realm.Id):N0}\n" +
+                     $"Users: {GetUserCount(realm.Id)}\n" +
+                     $"Planet Density: {GetDensityName(realm.PlanetDensity)}\n" +
+                     $"Resource Density: {GetResourceName(realm.ResourceDensity)}\n" +
+                     $"Alien Races: {realm.ActiveAlienRaces}\n" +
+                     $"Created: {realm.CreatedAt:yyyy-MM-dd HH:mm}";
+        
+        if (!string.IsNullOrEmpty(realm.Description))
+        {
+            details += $"\n\nDescription: {realm.Description}";
+        }
+        
+        await JSRuntime.InvokeVoidAsync("alert", details);
+    }
+
+    private async Task ViewRealmUsers(NexusRealm realm)
+    {
+        var users = await DbContext.Users
+            .Where(u => u.RealmId == realm.Id)
+            .Select(u => u.Username)
+            .ToListAsync();
+        
+        if (users.Any())
+        {
+            var userList = string.Join(", ", users);
+            await JSRuntime.InvokeVoidAsync("alert", $"Users in {realm.Name}:\n\n{userList}");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"No users currently in {realm.Name}");
+        }
+    }
+
+    private async Task DeleteRealm(int realmId)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this realm? This will also delete all associated data (nodes, planets, etc.)!"))
+        {
+            try
+            {
+                var realm = await DbContext.NexusRealms
+                    .Include(r => r.Nodes)
+                    .ThenInclude(n => n.Planets)
+                    .FirstOrDefaultAsync(r => r.Id == realmId);
+                    
+                if (realm != null)
+                {
+                    // Remove all users from this realm
+                    await DbContext.Users
+                        .Where(u => u.RealmId == realmId)
+                        .ExecuteUpdateAsync(u => u.SetProperty(p => p.RealmId, (int?)null));
+                    
+                    // Remove the realm (cascade delete will handle nodes and planets)
+                    DbContext.NexusRealms.Remove(realm);
+                    await DbContext.SaveChangesAsync();
+                    
+                    await LoadData();
+                    await JSRuntime.InvokeVoidAsync("alert", "Realm deleted successfully!");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting realm: {ex.Message}");
+            }
+        }
+    }
+}

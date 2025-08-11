@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoVoid 2500 - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 10px;
+            border: 1px solid #00ff88;
+        }
+
+        .header h1 {
+            color: #00ff88;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #00ff88;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #cccccc;
+            font-size: 0.9em;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 30px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: rgba(0, 255, 136, 0.2);
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            color: #00ff88;
+            font-size: 1.3em;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .btn {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #00cc6a;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #cc3333;
+        }
+
+        .btn-warning {
+            background: #ffaa00;
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background: #cc8800;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .table th {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .user-row {
+            cursor: pointer;
+        }
+
+        .user-row:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .status-active {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .status-inactive {
+            color: #888;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #00ff88;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            color: white;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #00ff88;
+        }
+
+        .loading {
+            text-align: center;
+            color: #00ff88;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ChronoVoid 2500</h1>
+            <p>Admin Control Panel</p>
+        </div>
+
+        <div id="stats-section" class="stats-grid">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>👥 User Management</h2>
+                <div>
+                    <button class="btn" onclick="refreshUsers()">🔄 Refresh</button>
+                    <button class="btn btn-warning" onclick="clearAllUsers()">⚠️ Clear All Users</button>
+                </div>
+            </div>
+            <div class="section-content">
+                <div id="users-loading" class="loading">Loading users...</div>
+                <div id="users-content" style="display: none;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Realm</th>
+                                <th>Node</th>
+                                <th>Cargo</th>
+                                <th>Last Login</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>🌌 Realm Management</h2>
+                <button class="btn" onclick="refreshRealms()">🔄 Refresh</button>
+            </div>
+            <div class="section-content">
+                <div id="realms-loading" class="loading">Loading realms...</div>
+                <div id="realms-content" style="display: none;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Nodes</th>
+                                <th>Quantum Stations</th>
+                                <th>Users</th>
+                                <th>Active Users</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="realms-table">
+                            <!-- Realms will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>👽 Alien Race Management</h2>
+                <div>
+                    <button class="btn" onclick="refreshAlienRaces()">🔄 Refresh</button>
+                    <button class="btn" onclick="generateAlienRaces()">🎲 Generate 5000 Races</button>
+                    <button class="btn" onclick="showRandomRaces()">🎯 Select Random 50</button>
+                </div>
+            </div>
+            <div class="section-content">
+                <div id="alien-stats" style="margin-bottom: 20px;">
+                    <!-- Alien race stats will be loaded here -->
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Technology Level Filter:</label>
+                    <select id="minTechFilter" style="margin: 0 10px; padding: 5px; background: #333; color: white; border: 1px solid #555;">
+                        <option value="">Min Tech</option>
+                        <option value="1">1 - Primitive</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5 - Average</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10 - Advanced</option>
+                    </select>
+                    <select id="maxTechFilter" style="margin: 0 10px; padding: 5px; background: #333; color: white; border: 1px solid #555;">
+                        <option value="">Max Tech</option>
+                        <option value="1">1 - Primitive</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5 - Average</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10 - Advanced</option>
+                    </select>
+                    <button class="btn" onclick="applyTechFilter()">Apply Filter</button>
+                </div>
+
+                <div id="aliens-loading" class="loading" style="display: none;">Loading alien races...</div>
+                <div id="aliens-content">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Tech Level</th>
+                                <th>Translator</th>
+                                <th>Disposition</th>
+                                <th>Human Relations</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aliens-table">
+                            <!-- Alien races will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserModal()">&times;</span>
+            <h2 id="modal-user-title">User Details</h2>
+            <div id="modal-user-content">
+                <!-- User details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadUsers();
+            loadRealms();
+            loadAlienRaceStats();
+            loadAlienRaces();
+        });
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('stats-section').innerHTML = `
+                    <div class="stat-card">
+                        <h3>${stats.totalUsers}</h3>
+                        <p>Total Users</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.activeUsers}</h3>
+                        <p>Active Users</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.totalRealms}</h3>
+                        <p>Total Realms</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.totalNodes}</h3>
+                        <p>Total Nodes</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.usersWithRealms}</h3>
+                        <p>Users in Realms</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.usersWithoutRealms}</h3>
+                        <p>Users without Realms</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`);
+                const users = await response.json();
+                
+                const tableBody = document.getElementById('users-table');
+                tableBody.innerHTML = users.map(user => `
+                    <tr class="user-row" onclick="showUserDetail('${user.id}')">
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>${user.realmName || 'None'}</td>
+                        <td>${user.currentNodeNumber || 'None'}</td>
+                        <td>${user.cargoHolds}</td>
+                        <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</td>
+                        <td class="${user.isActive ? 'status-active' : 'status-inactive'}">
+                            ${user.isActive ? '🟢 Active' : '🔴 Inactive'}
+                        </td>
+                        <td>
+                            <button class="btn btn-warning" onclick="event.stopPropagation(); resetUserLocation('${user.id}', '${user.username}')">Reset</button>
+                            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteUser('${user.id}', '${user.username}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('users-loading').style.display = 'none';
+                document.getElementById('users-content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('users-loading').innerHTML = '<div class="error">Error loading users</div>';
+            }
+        }
+
+        async function loadRealms() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/realms`);
+                const realms = await response.json();
+                
+                const tableBody = document.getElementById('realms-table');
+                tableBody.innerHTML = realms.map(realm => `
+                    <tr>
+                        <td>${realm.name}</td>
+                        <td>${realm.nodeCount}</td>
+                        <td>${realm.quantumStationSeedRate}%</td>
+                        <td>${realm.userCount}</td>
+                        <td>${realm.activeUserCount}</td>
+                        <td>${new Date(realm.createdAt).toLocaleString()}</td>
+                        <td>
+                            <button class="btn" onclick="showRealmUsers('${realm.id}', '${realm.name}')">View Users</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('realms-loading').style.display = 'none';
+                document.getElementById('realms-content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading realms:', error);
+                document.getElementById('realms-loading').innerHTML = '<div class="error">Error loading realms</div>';
+            }
+        }
+
+        async function showUserDetail(userId) {
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}`);
+                const user = await response.json();
+                
+                document.getElementById('modal-user-title').textContent = `User: ${user.username}`;
+                document.getElementById('modal-user-content').innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <h3>Basic Information</h3>
+                        <p><strong>Username:</strong> ${user.username}</p>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Cargo Holds:</strong> ${user.cargoHolds}</p>
+                        <p><strong>Created:</strong> ${new Date(user.createdAt).toLocaleString()}</p>
+                        <p><strong>Last Login:</strong> ${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h3>Current Location</h3>
+                        <p><strong>Realm:</strong> ${user.currentRealmName || 'None'}</p>
+                        <p><strong>Node:</strong> ${user.currentNodeNumber || 'None'}</p>
+                    </div>
+                    
+                    <div>
+                        <h3>Realm History</h3>
+                        ${user.realmHistory.length > 0 ? 
+                            user.realmHistory.map(realm => `
+                                <p>• ${realm.realmName} (Node: ${realm.currentNodeNumber || 'None'}) - Joined: ${new Date(realm.joinedAt).toLocaleString()}</p>
+                            `).join('') : 
+                            '<p>No realm history</p>'
+                        }
+                    </div>
+                `;
+                
+                document.getElementById('userModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading user details:', error);
+                alert('Error loading user details');
+            }
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert(`User "${username}" deleted successfully`);
+                    loadUsers();
+                    loadStats();
+                } else {
+                    alert('Error deleting user');
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error deleting user');
+            }
+        }
+
+        async function resetUserLocation(userId, username) {
+            if (!confirm(`Reset location for user "${username}"? This will remove them from their current realm.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}/reset-location`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert(`User "${username}" location reset successfully`);
+                    loadUsers();
+                    loadStats();
+                } else {
+                    alert('Error resetting user location');
+                }
+            } catch (error) {
+                console.error('Error resetting user location:', error);
+                alert('Error resetting user location');
+            }
+        }
+
+        async function clearAllUsers() {
+            if (!confirm('Are you sure you want to delete ALL users? This cannot be undone!')) {
+                return;
+            }
+
+            if (!confirm('This will permanently delete all user accounts. Are you absolutely sure?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/clear-all-users`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message);
+                    loadUsers();
+                    loadStats();
+                } else {
+                    alert('Error clearing users');
+                }
+            } catch (error) {
+                console.error('Error clearing users:', error);
+                alert('Error clearing users');
+            }
+        }
+
+        function refreshUsers() {
+            document.getElementById('users-loading').style.display = 'block';
+            document.getElementById('users-content').style.display = 'none';
+            loadUsers();
+        }
+
+        function refreshRealms() {
+            document.getElementById('realms-loading').style.display = 'block';
+            document.getElementById('realms-content').style.display = 'none';
+            loadRealms();
+        }
+
+        async function showRealmUsers(realmId, realmName) {
+            try {
+                const response = await fetch(`${API_BASE}/admin/realms/${realmId}/users`);
+                const users = await response.json();
+                
+                alert(`Users in "${realmName}":\n\n${users.map(u => `• ${u.username} (Node: ${u.currentNodeNumber || 'None'})`).join('\n') || 'No users in this realm'}`);
+            } catch (error) {
+                console.error('Error loading realm users:', error);
+                alert('Error loading realm users');
+            }
+        }
+
+        // Alien Race Management Functions
+        async function loadAlienRaceStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/AlienRace/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('alien-stats').innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.totalRaces}</div>
+                            <div class="stat-label">Total Races</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.activeRaces}</div>
+                            <div class="stat-label">Active Races</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${stats.translatorCapableCount}</div>
+                            <div class="stat-label">Translator Capable</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${Object.keys(stats.dispositionCounts).length}</div>
+                            <div class="stat-label">Disposition Types</div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading alien race stats:', error);
+            }
+        }
+
+        async function loadAlienRaces(filters = {}) {
+            try {
+                const params = new URLSearchParams();
+                if (filters.minTech) params.append('MinTechnologyLevel', filters.minTech);
+                if (filters.maxTech) params.append('MaxTechnologyLevel', filters.maxTech);
+                params.append('PageSize', '100'); // Show more races
+                
+                const response = await fetch(`${API_BASE}/api/AlienRace?${params}`);
+                const races = await response.json();
+                
+                const tableBody = document.getElementById('aliens-table');
+                tableBody.innerHTML = races.map(race => `
+                    <tr>
+                        <td><strong>${race.name}</strong></td>
+                        <td>${race.technologyLevel}/10</td>
+                        <td>${race.translatorCapable ? '✅ Yes' : '❌ No'}</td>
+                        <td>${race.disposition}</td>
+                        <td>${race.humanAgreeability}/10 ${getAgreeabilityEmoji(race.humanAgreeability)}</td>
+                        <td class="${race.isActive ? 'status-active' : 'status-inactive'}">
+                            ${race.isActive ? '🟢 Active' : '⚪ Inactive'}
+                        </td>
+                        <td>
+                            ${race.isActive ? 
+                                `<button class="btn btn-warning" onclick="replaceRace(${race.id})">🔄 Replace</button>` :
+                                `<button class="btn" onclick="activateRace(${race.id})">✅ Activate</button>`
+                            }
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading alien races:', error);
+                document.getElementById('aliens-table').innerHTML = '<tr><td colspan="7" class="error">Error loading alien races</td></tr>';
+            }
+        }
+
+        function getAgreeabilityEmoji(level) {
+            if (level <= 2) return '😡';
+            if (level <= 4) return '😠';
+            if (level <= 6) return '😐';
+            if (level <= 8) return '😊';
+            return '🥰';
+        }
+
+        async function generateAlienRaces() {
+            if (!confirm('This will replace all existing alien races with 5000 new ones. Continue?')) {
+                return;
+            }
+
+            try {
+                document.getElementById('aliens-loading').style.display = 'block';
+                
+                const response = await fetch(`${API_BASE}/api/AlienRace/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count: 5000 })
+                });
+                
+                if (response.ok) {
+                    alert('Successfully generated 5000 alien races!');
+                    await loadAlienRaceStats();
+                    await loadAlienRaces();
+                } else {
+                    alert('Error generating alien races');
+                }
+            } catch (error) {
+                console.error('Error generating alien races:', error);
+                alert('Error generating alien races');
+            } finally {
+                document.getElementById('aliens-loading').style.display = 'none';
+            }
+        }
+
+        async function showRandomRaces() {
+            try {
+                const minTech = document.getElementById('minTechFilter').value;
+                const maxTech = document.getElementById('maxTechFilter').value;
+                
+                const params = new URLSearchParams();
+                params.append('count', '50');
+                if (minTech) params.append('minTech', minTech);
+                if (maxTech) params.append('maxTech', maxTech);
+                
+                const response = await fetch(`${API_BASE}/api/AlienRace/random?${params}`);
+                const races = await response.json();
+                
+                if (confirm(`Activate these ${races.length} random races? This will deactivate all current active races.`)) {
+                    const activateResponse = await fetch(`${API_BASE}/api/AlienRace/activate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ raceIds: races.map(r => r.id) })
+                    });
+                    
+                    if (activateResponse.ok) {
+                        alert('Successfully activated 50 random races!');
+                        await loadAlienRaceStats();
+                        await loadAlienRaces();
+                    } else {
+                        alert('Error activating races');
+                    }
+                }
+            } catch (error) {
+                console.error('Error selecting random races:', error);
+                alert('Error selecting random races');
+            }
+        }
+
+        async function replaceRace(raceId) {
+            try {
+                const minTech = document.getElementById('minTechFilter').value;
+                const maxTech = document.getElementById('maxTechFilter').value;
+                
+                const params = new URLSearchParams();
+                if (minTech) params.append('minTech', minTech);
+                if (maxTech) params.append('maxTech', maxTech);
+                
+                const response = await fetch(`${API_BASE}/api/AlienRace/${raceId}/replace?${params}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const newRace = await response.json();
+                    alert(`Race replaced with: ${newRace.name} (Tech: ${newRace.technologyLevel}, Disposition: ${newRace.disposition})`);
+                    await loadAlienRaceStats();
+                    await loadAlienRaces();
+                } else {
+                    alert('Error replacing race');
+                }
+            } catch (error) {
+                console.error('Error replacing race:', error);
+                alert('Error replacing race');
+            }
+        }
+
+        async function activateRace(raceId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/AlienRace/activate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raceIds: [raceId] })
+                });
+                
+                if (response.ok) {
+                    alert('Race activated!');
+                    await loadAlienRaceStats();
+                    await loadAlienRaces();
+                } else {
+                    alert('Error activating race');
+                }
+            } catch (error) {
+                console.error('Error activating race:', error);
+                alert('Error activating race');
+            }
+        }
+
+        function applyTechFilter() {
+            const minTech = document.getElementById('minTechFilter').value;
+            const maxTech = document.getElementById('maxTechFilter').value;
+            
+            const filters = {};
+            if (minTech) filters.minTech = minTech;
+            if (maxTech) filters.maxTech = maxTech;
+            
+            loadAlienRaces(filters);
+        }
+
+        function refreshAlienRaces() {
+            document.getElementById('aliens-loading').style.display = 'block';
+            loadAlienRaceStats();
+            loadAlienRaces();
+            document.getElementById('aliens-loading').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('userModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoVoid 2500 - Nexus Realm Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            transform: translateY(-2px);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        .realm-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .realm-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .realm-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .realm-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .realm-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #cccccc;
+        }
+        
+        .nav-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .node-info {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .connection-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .connection-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-item:hover {
+            background: rgba(255, 0, 255, 0.1);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: #00ff88; }
+        .status-offline { background-color: #ff4444; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #00d4ff;
+        }
+        
+        .error {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .success {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ChronoVoid 2500</h1>
+            <p>Nexus Realm Management Dashboard</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('create-realm')">Create Realm</button>
+            <button class="tab" onclick="switchTab('realm-list')">View Realms</button>
+            <button class="tab" onclick="switchTab('navigation')">Navigation</button>
+        </div>
+        
+        <!-- Create Realm Tab -->
+        <div id="create-realm" class="tab-content active">
+            <div class="card-grid">
+                <div class="card">
+                    <h3>🌌 Create New Nexus Realm</h3>
+                    <form id="createRealmForm">
+                        <div class="form-group">
+                            <label for="realmName">Realm Name:</label>
+                            <input type="text" id="realmName" name="name" placeholder="Enter realm name..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nodeCount">Neural Node Count:</label>
+                            <input type="number" id="nodeCount" name="nodeCount" min="10" max="10000" value="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="stationSeedRate">Quantum Station Seed Rate (%):</label>
+                            <input type="range" id="stationSeedRate" name="quantumStationSeedRate" min="0" max="100" value="30" oninput="updateSeedRate(this.value)">
+                            <span id="seedRateValue">30%</span>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="noDeadNodes" name="noDeadNodes" checked>
+                                <label for="noDeadNodes">No Dead Nodes (Ensure all nodes connected)</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">🚀 Generate Realm</button>
+                    </form>
+                    <div id="createResult"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Realm List Tab -->
+        <div id="realm-list" class="tab-content">
+            <div class="realm-list">
+                <h3>🌟 Active Nexus Realms</h3>
+                <div id="realmListContent" class="loading">Loading realms...</div>
+            </div>
+        </div>
+        
+        <!-- Navigation Tab -->
+        <div id="navigation" class="tab-content">
+            <div class="card-grid">
+                <div class="card">
+                    <h3>🧭 Navigation Control</h3>
+                    <div class="form-group">
+                        <label for="navRealmSelect">Select Realm:</label>
+                        <select id="navRealmSelect" onchange="loadRealmNodes()">
+                            <option value="">Select a realm...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userId">User ID (creates test user if needed):</label>
+                        <input type="number" id="userId" value="1" min="1" placeholder="Enter user ID (1-999)">
+                        <small style="color: #cccccc;">Each user can be in different locations</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="currentNodeId">Current Node ID:</label>
+                        <input type="number" id="currentNodeId" value="1" min="1">
+                    </div>
+                    <button class="btn" onclick="loadNodeDetails()">🔍 Load Node Details</button>
+                    <button class="btn" onclick="loadUserLocation()" style="background: linear-gradient(45deg, #ff6b6b, #feca57); margin-top: 10px;">📍 Get User Location</button>
+                    <div id="navResult"></div>
+                </div>
+                <div class="card nav-panel">
+                    <h3>📍 Current Location</h3>
+                    <div id="nodeDetails" class="loading">Select a realm and node to view details...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'realm-list') {
+                loadRealms();
+            } else if (tabName === 'navigation') {
+                loadNavigationRealms();
+            }
+        }
+        
+        function updateSeedRate(value) {
+            document.getElementById('seedRateValue').textContent = value + '%';
+        }
+        
+        // Create Realm Form Handler
+        document.getElementById('createRealmForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                nodeCount: parseInt(formData.get('nodeCount')),
+                quantumStationSeedRate: parseInt(formData.get('quantumStationSeedRate')),
+                noDeadNodes: formData.get('noDeadNodes') === 'on'
+            };
+            
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = '<div class="loading">Creating realm...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/realm`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    const realm = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Realm "${realm.name}" created successfully!<br>
+                            🆔 ID: ${realm.id}<br>
+                            🌐 Nodes: ${realm.nodeCount}<br>
+                            🏭 Quantum Stations: ${realm.quantumStationSeedRate}% seed rate<br>
+                        </div>
+                    `;
+                    
+                    // Test connectivity
+                    setTimeout(() => testConnectivity(realm.id), 1000);
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = `<div class="error">❌ Error: ${error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        });
+        
+        async function testConnectivity(realmId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/realm/${realmId}/connectivity-test`);
+                if (response.ok) {
+                    const test = await response.json();
+                    const resultDiv = document.getElementById('createResult');
+                    resultDiv.innerHTML += `
+                        <div class="success">
+                            🔗 Connectivity Test:<br>
+                            📊 Total Nodes: ${test.totalNodes}<br>
+                            💀 Dead Nodes: ${test.deadNodes}<br>
+                            🌐 Node 1 Connections: ${test.node1Connections}<br>
+                            🏭 Quantum Stations: ${test.quantumStations}<br>
+                            ✅ No Dead Nodes: ${test.hasNoDeadNodes ? 'Yes' : 'No'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.log('Connectivity test failed:', error);
+            }
+        }
+        
+        async function loadRealms() {
+            const contentDiv = document.getElementById('realmListContent');
+            contentDiv.innerHTML = '<div class="loading">Loading realms...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/realm`);
+                if (response.ok) {
+                    const realms = await response.json();
+                    
+                    if (realms.length === 0) {
+                        contentDiv.innerHTML = '<p>No realms found. Create one in the Create Realm tab!</p>';
+                        return;
+                    }
+                    
+                    contentDiv.innerHTML = realms.map(realm => `
+                        <div class="realm-item" onclick="viewRealmDetails(${realm.id})">
+                            <div class="realm-name">${realm.name}</div>
+                            <div class="realm-stats">
+                                <span>🌐 ${realm.nodeCount} Nodes</span>
+                                <span>🏭 ${realm.quantumStationSeedRate}% Stations</span>
+                                <span>🔗 ${realm.noDeadNodes ? 'No Dead Nodes' : 'Dead Nodes Allowed'}</span>
+                                <span>📅 ${new Date(realm.createdAt).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    contentDiv.innerHTML = '<div class="error">❌ Failed to load realms</div>';
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function viewRealmDetails(realmId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/realm/${realmId}/connectivity-test`);
+                if (response.ok) {
+                    const test = await response.json();
+                    alert(`Realm: ${test.realmName}\n\nStats:\n- Total Nodes: ${test.totalNodes}\n- Dead Nodes: ${test.deadNodes}\n- Node 1 Connections: ${test.node1Connections}\n- Quantum Stations: ${test.quantumStations}\n- No Dead Nodes: ${test.hasNoDeadNodes ? 'Yes' : 'No'}`);
+                }
+            } catch (error) {
+                alert('Failed to load realm details');
+            }
+        }
+        
+        async function loadNodeDetails() {
+            const nodeId = document.getElementById('currentNodeId').value;
+            const detailsDiv = document.getElementById('nodeDetails');
+            
+            detailsDiv.innerHTML = '<div class="loading">Loading node details...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/navigation/node/${nodeId}`);
+                if (response.ok) {
+                    const node = await response.json();
+                    detailsDiv.innerHTML = `
+                        <div class="node-info">
+                            <h4>🌐 Neural Node ${node.nodeNumber}</h4>
+                            <p><strong>Realm:</strong> ${node.realmName}</p>
+                            <p><strong>Coordinates:</strong> (${node.coordinateX}, ${node.coordinateY})</p>
+                            <p><strong>Quantum Station:</strong> ${node.hasQuantumStation ? '🏭 Yes' : '❌ No'}</p>
+                        </div>
+                        <h4>🔗 Connected Nodes (${node.connectedNodes.length})</h4>
+                        <div class="connection-list">
+                            ${node.connectedNodes.map(conn => `
+                                <div class="connection-item" onclick="navigateToNode(${conn.nodeId})">
+                                    <span class="status-indicator status-online"></span>
+                                    Node ${conn.nodeNumber} 
+                                    ${conn.hasQuantumStation ? '🏭' : ''}
+                                    <small>(${conn.coordinateX}, ${conn.coordinateY})</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    detailsDiv.innerHTML = '<div class="error">❌ Node not found</div>';
+                }
+            } catch (error) {
+                detailsDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function navigateToNode(toNodeId) {
+            const userId = document.getElementById('userId').value;
+            const fromNodeId = document.getElementById('currentNodeId').value;
+            
+            const resultDiv = document.getElementById('navResult');
+            resultDiv.innerHTML = '<div class="loading">Moving to node...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/navigation/move`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        fromNodeId: parseInt(fromNodeId),
+                        toNodeId: parseInt(toNodeId)
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = `<div class="success">✅ ${result.message}</div>`;
+                    
+                    // Update current node and reload details
+                    document.getElementById('currentNodeId').value = toNodeId;
+                    setTimeout(loadNodeDetails, 500);
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = `<div class="error">❌ ${error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadNavigationRealms() {
+            const select = document.getElementById('navRealmSelect');
+            try {
+                const response = await fetch(`${API_BASE}/api/realm`);
+                if (response.ok) {
+                    const realms = await response.json();
+                    select.innerHTML = '<option value="">Select a realm...</option>';
+                    realms.forEach(realm => {
+                        select.innerHTML += `<option value="${realm.id}">${realm.name} (${realm.nodeCount} nodes)</option>`;
+                    });
+                }
+            } catch (error) {
+                console.log('Failed to load realms for navigation:', error);
+            }
+        }
+        
+        async function loadRealmNodes() {
+            const realmId = document.getElementById('navRealmSelect').value;
+            if (!realmId) return;
+            
+            // Set first node as default for the selected realm
+            try {
+                const response = await fetch(`${API_BASE}/api/realm/${realmId}/nodes`);
+                if (response.ok) {
+                    const nodes = await response.json();
+                    if (nodes.length > 0) {
+                        document.getElementById('currentNodeId').value = nodes[0].id;
+                        loadNodeDetails();
+                    }
+                }
+            } catch (error) {
+                console.log('Failed to load realm nodes:', error);
+            }
+        }
+        
+        async function loadUserLocation() {
+            const userId = document.getElementById('userId').value;
+            const resultDiv = document.getElementById('navResult');
+            
+            resultDiv.innerHTML = '<div class="loading">Loading user location...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/navigation/user/${userId}/location`);
+                if (response.ok) {
+                    const location = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            👤 User: ${location.username}<br>
+                            📍 Current Location: Node ${location.currentNodeNumber}<br>
+                            🌐 Realm: ${location.realmName}<br>
+                            🕒 Last Login: ${new Date(location.lastLogin).toLocaleString()}
+                        </div>
+                    `;
+                    
+                    // Update the form with user's current location
+                    document.getElementById('currentNodeId').value = location.currentNodeId;
+                    loadNodeDetails();
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ User not found or no location set</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Load realms on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Optional: load initial data
+        });
+    </script>
+</body>
+</html>

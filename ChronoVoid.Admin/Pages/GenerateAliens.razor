@@ -1,0 +1,339 @@
+@page "/generate-aliens"
+@using ChronoVoid.API.Services
+@using ChronoVoid.API.Models
+@using ChronoVoid.API.Data
+@inject AlienRaceGeneratorService AlienService
+@inject ChronoVoidContext DbContext
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>Generate Alien Races - ChronoVoid 2500 Admin</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h1 class="admin-title">🤖 Generate Alien Races</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-gear"></i> Generation Settings</h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@generationConfig" OnValidSubmit="@GenerateAliensAsync">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Number of Races to Generate *</label>
+                            <InputNumber @bind-Value="generationConfig.Count" class="form-control" min="1" max="50" />
+                            <ValidationMessage For="@(() => generationConfig.Count)" class="text-danger" />
+                            <small class="form-text text-muted">Generate 1-50 alien races at once</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Minimum Technology Level</label>
+                            <InputNumber @bind-Value="generationConfig.MinTechLevel" class="form-control" min="1" max="10" />
+                            <small class="form-text text-muted">1 = Primitive, 10 = Advanced</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Maximum Technology Level</label>
+                            <InputNumber @bind-Value="generationConfig.MaxTechLevel" class="form-control" min="1" max="10" />
+                            <small class="form-text text-muted">Must be >= minimum level</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Translator Capability Chance (%)</label>
+                            <InputNumber @bind-Value="generationConfig.TranslatorChance" class="form-control" min="0" max="100" />
+                            <small class="form-text text-muted">Chance races can use translators</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label">Preferred Dispositions (Optional)</label>
+                            <div class="row">
+                                @foreach (var disposition in availableDispositions)
+                                {
+                                    <div class="col-md-4 col-lg-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   checked="@selectedDispositions.Contains(disposition)"
+                                                   @onchange="@((e) => ToggleDisposition(disposition, (bool)e.Value!))"
+                                                   id="disp_@disposition" />
+                                            <label class="form-check-label" for="disp_@disposition">
+                                                @disposition
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <small class="form-text text-muted">Leave empty to use all dispositions randomly</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <InputCheckbox @bind-Value="generationConfig.ActivateImmediately" class="form-check-input" id="activateSwitch" />
+                                <label class="form-check-label" for="activateSwitch">
+                                    Activate races immediately after generation
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" disabled="@isGenerating">
+                                    @if (isGenerating)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <text>Generating...</text>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-robot"></i>
+                                        <text>Generate Alien Races</text>
+                                    }
+                                </button>
+                                <a href="/alien-races" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Back to Alien Races
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Generation Preview</h5>
+            </div>
+            <div class="card-body">
+                <h6>Settings Summary</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Races to Generate:</strong> @generationConfig.Count</li>
+                    <li><strong>Tech Level Range:</strong> @generationConfig.MinTechLevel - @generationConfig.MaxTechLevel</li>
+                    <li><strong>Translator Chance:</strong> @generationConfig.TranslatorChance%</li>
+                    <li><strong>Auto-Activate:</strong> @(generationConfig.ActivateImmediately ? "Yes" : "No")</li>
+                </ul>
+                
+                @if (selectedDispositions.Any())
+                {
+                    <h6>Selected Dispositions (@selectedDispositions.Count)</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach (var disposition in selectedDispositions)
+                        {
+                            <span class="badge bg-info">@disposition</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <h6>Dispositions</h6>
+                    <p class="text-muted small">All @availableDispositions.Length dispositions will be used randomly</p>
+                }
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <strong>Estimated Time:</strong><br>
+                        ~@(generationConfig.Count * 0.1) seconds
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="bi bi-lightbulb"></i> Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li>Higher tech levels create more advanced civilizations</li>
+                    <li>Translator capability affects diplomatic options</li>
+                    <li>Different dispositions create varied gameplay experiences</li>
+                    <li>Generated races can be edited later in the Alien Races page</li>
+                    <li>Inactive races won't appear in new realms until activated</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (generatedRaces.Any())
+{
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-check-circle"></i> Recently Generated Races (@generatedRaces.Count)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var race in generatedRaces)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card bg-dark">
+                                    <div class="card-body">
+                                        <h6 class="card-title">@race.Name</h6>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge bg-@GetTechLevelColor(race.TechnologyLevel)">Tech @race.TechnologyLevel</span>
+                                            <span class="badge bg-@GetDispositionColor(race.Disposition)">@race.Disposition</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Agreeability: @race.HumanAgreeability/10</small>
+                                            <span class="badge bg-@(race.TranslatorCapable ? "success" : "secondary")">
+                                                @(race.TranslatorCapable ? "Translator" : "No Translator")
+                                            </span>
+                                        </div>
+                                        @if (race.IsActive)
+                                        {
+                                            <span class="badge bg-success mt-2">Active</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private GenerationConfiguration generationConfig = new();
+    private List<AlienRace> generatedRaces = new();
+    private HashSet<string> selectedDispositions = new();
+    private bool isGenerating = false;
+    private readonly Random _random = new();
+    
+    private readonly string[] availableDispositions = AlienDispositions.All;
+
+    public class GenerationConfiguration
+    {
+        [Required]
+        [Range(1, 50)]
+        public int Count { get; set; } = 5;
+        
+        [Range(1, 10)]
+        public int MinTechLevel { get; set; } = 1;
+        
+        [Range(1, 10)]
+        public int MaxTechLevel { get; set; } = 10;
+        
+        [Range(0, 100)]
+        public int TranslatorChance { get; set; } = 50;
+        
+        public bool ActivateImmediately { get; set; } = true;
+    }
+
+    private void ToggleDisposition(string disposition, bool selected)
+    {
+        if (selected)
+        {
+            selectedDispositions.Add(disposition);
+        }
+        else
+        {
+            selectedDispositions.Remove(disposition);
+        }
+        StateHasChanged();
+    }
+
+    private async Task GenerateAliensAsync()
+    {
+        if (generationConfig.MinTechLevel > generationConfig.MaxTechLevel)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Minimum tech level cannot be greater than maximum tech level.");
+            return;
+        }
+
+        isGenerating = true;
+        StateHasChanged();
+
+        try
+        {
+            var dispositionsToUse = selectedDispositions.Any() 
+                ? selectedDispositions.ToArray() 
+                : availableDispositions;
+
+            var newRaces = AlienService.GenerateRaces(generationConfig.Count);
+            
+            // Apply filters based on configuration
+            foreach (var race in newRaces)
+            {
+                // Adjust tech level to be within range
+                if (race.TechnologyLevel < generationConfig.MinTechLevel || race.TechnologyLevel > generationConfig.MaxTechLevel)
+                {
+                    race.TechnologyLevel = _random.Next(generationConfig.MinTechLevel, generationConfig.MaxTechLevel + 1);
+                }
+                
+                // Apply translator capability chance
+                race.TranslatorCapable = _random.NextDouble() < (generationConfig.TranslatorChance / 100.0);
+                
+                // Filter dispositions if specified
+                if (selectedDispositions.Any() && !selectedDispositions.Contains(race.Disposition))
+                {
+                    race.Disposition = dispositionsToUse[_random.Next(dispositionsToUse.Length)];
+                }
+                
+                // Set active status
+                race.IsActive = generationConfig.ActivateImmediately;
+            }
+
+            // Save to database
+            DbContext.AlienRaces.AddRange(newRaces);
+            await DbContext.SaveChangesAsync();
+            
+            generatedRaces = newRaces.ToList();
+
+            await JSRuntime.InvokeVoidAsync("alert", 
+                $"Successfully generated {newRaces.Count} alien races!\n" +
+                $"Active: {newRaces.Count(r => r.IsActive)}\n" +
+                $"Tech Levels: {newRaces.Min(r => r.TechnologyLevel)}-{newRaces.Max(r => r.TechnologyLevel)}");
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error generating alien races: {ex.Message}");
+        }
+        finally
+        {
+            isGenerating = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTechLevelColor(int techLevel)
+    {
+        return techLevel switch
+        {
+            <= 3 => "secondary",
+            <= 6 => "primary",
+            <= 8 => "warning",
+            _ => "danger"
+        };
+    }
+
+    private string GetDispositionColor(string disposition)
+    {
+        return disposition switch
+        {
+            "Peaceful" or "Pacifists" or "Diplomats" => "success",
+            "Aggressive" or "Warriors" or "Pirates" => "danger",
+            "Traders" or "Mercenaries" => "warning",
+            "Scholars" or "Scientific" => "info",
+            _ => "secondary"
+        };
+    }
+}
