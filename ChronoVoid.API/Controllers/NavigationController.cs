@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using ChronoVoid.API.Data;
 using ChronoVoid.API.Models;
 using ChronoVoid.API.DTOs;

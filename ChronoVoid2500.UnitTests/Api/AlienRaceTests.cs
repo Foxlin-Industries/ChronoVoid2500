@@ -30,7 +30,7 @@ public class AlienRaceTests : IClassFixture<ApiTestFixture>
             race.Id.Should().BeGreaterThan(0);
             race.Name.Should().NotBeNullOrEmpty();
             race.TechnologyLevel.Should().BeInRange(1, 10);
-            race.TranslatorCapable.Should().BeOneOf(true, false);
+            // TranslatorCapable is a boolean value (no assertion needed)
         }
     }
 
@@ -53,7 +53,7 @@ public class AlienRaceTests : IClassFixture<ApiTestFixture>
         race!.Id.Should().Be(raceId);
         race.Name.Should().NotBeNullOrEmpty();
         race.TechnologyLevel.Should().BeInRange(1, 10);
-        race.TranslatorCapable.Should().BeOneOf(true, false);
+        // TranslatorCapable is a boolean value (no assertion needed)
     }
 
     [Fact]
@@ -251,5 +251,10 @@ public class AlienRaceTests : IClassFixture<ApiTestFixture>
     // DTOs for the tests
     private record AlienRaceDto(int Id, string Name, int TechnologyLevel, bool TranslatorCapable, DateTime CreatedAt);
     private record AlienRaceGenerationResultDto(bool Success, int GeneratedCount, string Message);
-    private record AlienRaceUpdateDto(string Name, int TechnologyLevel, bool TranslatorCapable);
+    private record AlienRaceUpdateDto
+    {
+        public string Name { get; init; } = string.Empty;
+        public int TechnologyLevel { get; init; }
+        public bool TranslatorCapable { get; init; }
+    }
 }

@@ -224,11 +224,11 @@ public class TradingSystemTests : IClassFixture<ApiTestFixture>
         }
     }
 
-    private async Task<int> GetPlayerCredits(int userId)
+    private Task<int> GetPlayerCredits(int userId)
     {
         // This would need to be implemented in the API
         // For now, return a placeholder value
-        return 1000;
+        return Task.FromResult(1000);
     }
 
     // DTOs for the test
@@ -238,5 +238,12 @@ public class TradingSystemTests : IClassFixture<ApiTestFixture>
     private record StarbaseInfo(int Id, int NodeId, int? OwnerId, int DefenseLevel);
     private record MarketDto(int StarbaseId, string StarName, List<MarketItemDto> Items);
     private record MarketItemDto(int StarbaseId, string ResourceType, decimal BuyPrice, decimal SellPrice, int Stock);
-    private record TradeRequestDto(int UserId, int StarbaseId, string ResourceType, int Quantity, bool IsBuy);
+    private record TradeRequestDto
+    {
+        public int UserId { get; init; }
+        public int StarbaseId { get; init; }
+        public string ResourceType { get; init; } = string.Empty;
+        public int Quantity { get; init; }
+        public bool IsBuy { get; init; }
+    }
 }

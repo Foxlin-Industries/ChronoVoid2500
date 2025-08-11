@@ -300,13 +300,35 @@ public class ShipAndCombatTests : IClassFixture<ApiTestFixture>
     // DTOs for the tests
     private record AuthResponse(int UserId, string Username, string Email, int? CurrentNodeId, int? RealmId, int CargoHolds, DateTime LastLogin, string Token);
     private record ShipDto(int Id, string Name, string ShipType, int CargoCapacity, int WeaponLevel, int ShieldLevel, int ComputerLevel, int? OwnerId);
-    private record ShipPurchaseDto(int UserId, string ShipType, string Name);
+    private record ShipPurchaseDto
+    {
+        public int UserId { get; init; }
+        public string ShipType { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+    }
     private record ShipPurchaseResultDto(bool Success, int ShipId, string Message);
-    private record ShipUpgradeDto(int ShipId, string UpgradeType, int Level);
+    private record ShipUpgradeDto
+    {
+        public int ShipId { get; init; }
+        public string UpgradeType { get; init; } = string.Empty;
+        public int Level { get; init; }
+    }
     private record CombatFactionDto(int Id, string Name, string Description, int PowerLevel);
-    private record CombatInitiationDto(int AttackerId, int DefenderId, string CombatType);
+    private record CombatInitiationDto
+    {
+        public int AttackerId { get; init; }
+        public int DefenderId { get; init; }
+        public string CombatType { get; init; } = string.Empty;
+    }
     private record CombatResultDto(int CombatId, string Status, string Winner, string Details);
     private record CombatHistoryDto(int CombatId, int AttackerId, int DefenderId, string Result, DateTime Timestamp);
-    private record TroopDeploymentDto(int UserId, int Level, int Quantity, string LocationType, int LocationId);
+    private record TroopDeploymentDto
+    {
+        public int UserId { get; init; }
+        public int Level { get; init; }
+        public int Quantity { get; init; }
+        public string LocationType { get; init; } = string.Empty;
+        public int LocationId { get; init; }
+    }
     private record TroopDeploymentResultDto(bool Success, int DeployedCount, string Message);
 }

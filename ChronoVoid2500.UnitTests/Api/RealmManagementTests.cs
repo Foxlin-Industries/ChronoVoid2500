@@ -210,7 +210,13 @@ public class RealmManagementTests : IClassFixture<ApiTestFixture>
     // DTOs for the tests
     private record RealmDto(int Id, string Name, int NodeCount, int QuantumStationSeedRate, bool NoDeadNodes, DateTime CreatedAt, bool IsActive);
     private record NodeDto(int Id, int NodeNumber, int CoordinateX, int CoordinateY, bool HasQuantumStation, List<int> ConnectedNodes);
-    private record RealmCreationDto(string Name, int NodeCount, int QuantumStationSeedRate, bool NoDeadNodes);
+    private record RealmCreationDto
+    {
+        public string Name { get; init; } = string.Empty;
+        public int NodeCount { get; init; }
+        public int QuantumStationSeedRate { get; init; }
+        public bool NoDeadNodes { get; init; }
+    }
     private record RealmCreationResultDto(bool Success, int RealmId, string Message);
     private record RealmDetailDto(int Id, string Name, int NodeCount, int QuantumStationSeedRate, bool NoDeadNodes, DateTime CreatedAt, bool IsActive);
 }

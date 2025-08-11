@@ -3,6 +3,7 @@ using ChronoVoid.API.DTOs;
 using ChronoVoid.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 
 namespace ChronoVoid.API.Controllers;
 

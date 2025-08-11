@@ -307,7 +307,12 @@ public class AdminSystemTests : IClassFixture<ApiTestFixture>
     private record SystemStatisticsDto(int TotalUsers, int TotalRealms, int TotalPlanets, int TotalShips, int ActiveUsers, TimeSpan SystemUptime);
     private record AdminUserDto(int Id, string Username, string Email, DateTime CreatedAt, DateTime LastLogin, bool IsActive);
     private record AdminUserDetailDto(int Id, string Username, string Email, DateTime CreatedAt, DateTime LastLogin, int? CurrentNodeId, int? RealmId, int CargoHolds, bool IsActive);
-    private record AdminUserUpdateDto(string Username, string Email, int CargoHolds);
+    private record AdminUserUpdateDto
+    {
+        public string Username { get; init; } = string.Empty;
+        public string Email { get; init; } = string.Empty;
+        public int CargoHolds { get; init; }
+    }
     private record AdminRealmDto(int Id, string Name, int NodeCount, int UserCount, DateTime CreatedAt, bool IsActive);
     private record AdminRealmDetailDto(int Id, string Name, int NodeCount, int UserCount, DateTime CreatedAt, bool IsActive, List<AdminUserDto> Users, List<AdminNodeDto> Nodes);
     private record AdminNodeDto(int Id, int NodeNumber, bool HasQuantumStation, int PlanetCount);

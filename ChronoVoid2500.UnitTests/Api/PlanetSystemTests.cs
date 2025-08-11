@@ -32,7 +32,8 @@ public class PlanetSystemTests : IClassFixture<ApiTestFixture>
             planet.PlanetType.Should().NotBeNullOrEmpty();
             planet.Size.Should().BeGreaterThan(0);
             planet.Distance.Should().BeGreaterThanOrEqualTo(0);
-            planet.OwnerId.Should().BeOneOf(null, 0); // Can be unowned
+            // OwnerId can be null or 0 for unowned planets
+            (planet.OwnerId == null || planet.OwnerId == 0).Should().BeTrue();
         }
     }
 
@@ -332,9 +333,19 @@ public class PlanetSystemTests : IClassFixture<ApiTestFixture>
     private record RealmDto(int Id, string Name, int NodeCount, int QuantumStationSeedRate, bool NoDeadNodes, DateTime CreatedAt, bool IsActive);
     private record NodeDto(int Id, int NodeNumber, int CoordinateX, int CoordinateY, bool HasQuantumStation, List<int> ConnectedNodes);
     private record PlanetDto(int Id, string Name, string PlanetType, int Size, int Distance, int? OwnerId, int NodeId);
-    private record PlanetPurchaseDto(int UserId, int PlanetId, string PurchaseType, int Amount);
+    private record PlanetPurchaseDto
+    {
+        public int UserId { get; init; }
+        public int PlanetId { get; init; }
+        public string PurchaseType { get; init; } = string.Empty;
+        public int Amount { get; init; }
+    }
     private record PlanetPurchaseResultDto(bool Success, string Message);
     private record PlanetResourcesDto(int PlanetId, string ResourceType, int ProductionRate, int CurrentStock);
-    private record ResourceCollectionDto(int UserId, int PlanetId);
+    private record ResourceCollectionDto
+    {
+        public int UserId { get; init; }
+        public int PlanetId { get; init; }
+    }
     private record ResourceCollectionResultDto(bool Success, int CollectedAmount, string Message);
 }
